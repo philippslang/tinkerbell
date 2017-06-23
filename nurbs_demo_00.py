@@ -7,8 +7,7 @@ from matplotlib import pyplot as plt
 
 # Create a NURBS curve instance
 curve = fact.from_file('data_demo/curve_00.json')
-
-print(curve.knotvector)
+curve = fact.from_file('data_demo/curve_02.json')
 
 # Calculate curve points
 curve.evaluate_rational()

@@ -15,6 +15,8 @@ curve.evaluate_rational()
 ctrlpts_x = [pt[0] for pt in curve.ctrlpts]
 ctrlpts_y = [pt[1] for pt in curve.ctrlpts]
 
+print(curve.knotvector)
+
 
 # Arrange curve points for plotting
 curvepts_x = [pt[0] for pt in curve.curvepts]
