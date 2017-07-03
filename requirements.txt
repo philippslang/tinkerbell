@@ -1,2 +1,2 @@
-NURBS-Python
 matplotlib
+scipy=0.19
