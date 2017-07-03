@@ -1,42 +1,8 @@
-"""
-.. module:: factories
-    :platform: Unix, Windows
-    :synopsis: Facilitates creation of curves
-
-.. moduleauthor:: Philipp Lang
-
-"""
-
-import json
+import point as pt
 import numpy as np
-from nurbs import Curve as nc
-from nurbs import utilities as ncutils
 from matplotlib import pyplot as plt
+from scipy.interpolate import make_lsq_spline, BSpline
 
-class Point:
-    def __init__(self, x, y):
-        self.coordinates = [x, y]
-
-
-def read_points(fname):
-    with open(fname) as f:
-        data = json.load(f)
-    coords = data['coordinates']
-    xcoords = coords['x']
-    ycoords = coords['y']
-    return [Point(x, y) for x, y in zip(xcoords, ycoords)]
-
-def point_coordinates(pts, idx=0):
-    """
-    Returns concatenated list of all x (idx=0) or y (idx=1) coordinates
-    of the provided points.
-    """
-    return [pt[idx] for pt in pts]
-
-def plot_points(ax, points):
-    xcoords = [point.x for point in points]
-    ycoords = [point.y for point in points]
-    ax.plot(xcoords, ycoords, 'x')
 
 def least_square(points, h, p=3):
     """
@@ -60,10 +26,26 @@ def least_square(points, h, p=3):
     pass
 
 
-points = read_points('data_demo/points_00.json')
+pts_fname = 'data_demo/points_00.json'
+pts_fname = 'data_demo/points_01.json'
+pts = pt.read_points(pts_fname)
+
+pts_coords = [np.array(pt.point_coordinates(pts, i)) for i in range(2)]
+
+# approcimating spline
+t = [10, 25, 40]
+k = 3
+t = np.r_[(pts_coords[0][0],)*(k+1), t, (pts_coords[0][-1],)*(k+1)]
+spl = make_lsq_spline(*pts_coords, t, k)
+print(spl.t)
+print(spl.c)
+print(spl.k)
+spl = BSpline(spl.t, spl.c, spl.k)
+
 fig = plt.figure() 
 ax = fig.add_subplot(111)
-plot_points(ax, points)
+pt.plot_points(ax, pts)
+ax.plot(pts_coords[0], spl(pts_coords[0]), 'g-', lw=3, label='LSQ spline')
 plt.show()
 
 
