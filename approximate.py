@@ -15,8 +15,8 @@ from matplotlib import pyplot as plt
 
 class Point:
     def __init__(self, x, y):
-        self.x = x
-        self.y = y
+        self.coordinates = [x, y]
+
 
 def read_points(fname):
     with open(fname) as f:
@@ -25,6 +25,13 @@ def read_points(fname):
     xcoords = coords['x']
     ycoords = coords['y']
     return [Point(x, y) for x, y in zip(xcoords, ycoords)]
+
+def point_coordinates(pts, idx=0):
+    """
+    Returns concatenated list of all x (idx=0) or y (idx=1) coordinates
+    of the provided points.
+    """
+    return [pt[idx] for pt in pts]
 
 def plot_points(ax, points):
     xcoords = [point.x for point in points]
@@ -44,7 +51,7 @@ def least_square(points, h, p=3):
     :type p: float
     :return: nurbs.Curve
     """
-    # D[0..n] = C[0..n] n+1 points to approximat4
+    # D[0..n] = C[0..n] n+1 points to approximate
     n = len(points)-1
     # P[0..h] h+1 control points, incl. first and last (which equal D[0] and D[n])
     h = h-1
