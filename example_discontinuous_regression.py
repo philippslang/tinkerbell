@@ -7,15 +7,17 @@ from scipy.optimize import fsolve
 from sklearn.preprocessing import StandardScaler
 from keras.models import Sequential
 from keras.layers import Dense
-from example_discontinuous_tocsv import OFFSET_C, NUM_C, OFFSET_T, NUM_T, Y_MAX, K, FNAME
+from example_discontinuous_tocsv import OFFSET_C, NUM_C, OFFSET_T, NUM_T, Y_MAX, K, FNAME, make_internal_knots
 from example_discontinuous_fromcsv import make_spline
 
 
 def model_deep():
 	model = Sequential()
 	model.add(Dense(1, input_dim=1, activation='relu'))
+	#model.add(Dense(NUM_T, activation='relu'))
 	model.add(Dense(NUM_C, activation='relu'))
-	model.add(Dense(NUM_C+NUM_T, activation='relu'))
+	#model.add(Dense(NUM_C+NUM_T, activation='relu'))
+	#model.add(Dense(NUM_C+NUM_T, activation='relu'))
 	model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
 	return model
 
@@ -26,7 +28,8 @@ if __name__ == '__main__':
     dataset = data.values
 
     features = dataset[:,0]
-    labels = dataset[:,1:]
+    # coefficients only
+    labels = dataset[:,NUM_T+1:]
 
     normalizer_features = StandardScaler()
     features_normalized = normalizer_features.fit_transform(features)
@@ -45,7 +48,7 @@ if __name__ == '__main__':
     features_test_normalized = normalizer_features.transform(features_test)
     labels_test_normalized = model.predict(features_test_normalized)
     labels_test = normalizer_labels.inverse_transform(labels_test_normalized)
-    spl_test = [make_spline(labels_test_val) for labels_test_val in labels_test]
+    spl_test = [make_spline(np.r_[make_internal_knots(features_test[i][0]), labels_test[i]]) for i in range(len(labels_test))]
     fig = plt.figure() 
     ax = fig.add_subplot(111)
     xcoords_plot = np.linspace(0.0, Y_MAX, 200)

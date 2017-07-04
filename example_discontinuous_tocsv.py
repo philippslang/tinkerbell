@@ -13,14 +13,19 @@ NUM_C = 7
 NUM_T = 4
 Y_MAX = 50.0
 K = 2
+DX = Y_MAX/50
 FNAME = 'data_demo/discontinuous00.csv'
+
+def make_internal_knots(xdisc):
+    xmax = Y_MAX
+    return [xdisc-DX, xdisc, xdisc+DX, xmax-(xmax-xdisc+DX)/3]
 
 if __name__ == '__main__':
     y_i = Y_MAX
     d = 0.1
     x_max = y_i
     k = K
-    dx = x_max/50
+    dx = DX
     realizations_per_x_disc = 20
     num_x_discs = 20
     np.random.seed(42)
@@ -28,17 +33,16 @@ if __name__ == '__main__':
     data = pd.DataFrame(0.0, index=np.arange(num_x_discs*realizations_per_x_disc), columns=COLUMNS)
 
     irow = 0
-    for x_disc in np.linspace(10.0, 35.0, num_x_discs):
+    for xdisc in np.linspace(10.0, 35.0, num_x_discs):
         for irealization in range(realizations_per_x_disc):
             # disturbance time
-            data.iat[irow, 0] = x_disc
+            data.iat[irow, 0] = xdisc
 
-            pts = fc.points_exponential_discontinuous_decline_noisy(y_i, d, x_max, x_disc)
+            pts = fc.points_exponential_discontinuous_decline_noisy(y_i, d, x_max, xdisc)
             pts_coords = [np.array(pt.point_coordinates(pts, i)) for i in range(2)]
             
-            xmax = pts_coords[0].max()
             # only internal knots needed for splrep()
-            t = [x_disc-dx, x_disc, x_disc+dx, xmax-(xmax-x_disc+dx)/3]
+            t = make_internal_knots(xdisc)
             # and we only save the interior ones, the other ones can be deferred from order
             data.loc[irow, OFFSET_T:OFFSET_T+NUM_T] = t[:]
 
