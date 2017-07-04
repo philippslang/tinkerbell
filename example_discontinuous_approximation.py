@@ -6,10 +6,11 @@ from scipy.interpolate import make_lsq_spline, BSpline, UnivariateSpline, splrep
 from scipy.optimize import fsolve
 
 
-y_i = 50
+y_i = 50.0
 d = 0.1
-x_max = 50.0
+x_max = y_i
 k = 2
+np.random.seed(42)
 
 for x_disc in np.linspace(10.0, 30.0, 8):
     pts = fc.points_exponential_discontinuous_decline_noisy(y_i, d, x_max, x_disc)
@@ -19,7 +20,7 @@ for x_disc in np.linspace(10.0, 30.0, 8):
         sfactor = 5
         t, c, k = splrep(*pts_coords, k=k, s=len(pts)*sfactor)
     else:
-        dx = 4.0
+        dx = 1.0
         xmax = pts_coords[0].max()
         # only internal knots needed for splrep()
         t = [x_disc-dx, x_disc, x_disc+dx]
@@ -35,14 +36,10 @@ for x_disc in np.linspace(10.0, 30.0, 8):
     pt.plot_points(ax, pts)
     xcoords_plot = np.linspace(pts_coords[0].min(), pts_coords[0].max(), 200)
     ax.plot(xcoords_plot, spl(xcoords_plot), 'g-', lw=3)
-    #print(spl.t)
-    print(spl.c)
+    print(spl.t)
+    #print(spl.c)
     plt.show()
 
-#print(len(spl.t))
-#print(spl.t)
-#print(spl.c)
-#print(len(spl.t))
 
 
 

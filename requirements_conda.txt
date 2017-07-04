@@ -1,0 +1,6 @@
+conda install -c conda-forge matplotlib=2.0.2
+conda install -c anaconda scipy=0.19.1
+conda install -c conda-forge tensorflow=1.1.0
+conda install -c conda-forge keras=2.0.2
+conda install -c anaconda pandas=0.20.2
+conda install -c anaconda scikit-learn=0.18.2
