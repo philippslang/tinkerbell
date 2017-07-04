@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from scipy.optimize import fsolve
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MaxAbsScaler
 from keras.models import Sequential
 from keras.layers import Dense
 from example_discontinuous_tocsv import OFFSET_C, NUM_C, OFFSET_T, NUM_T, Y_MAX, K, FNAME, make_internal_knots
@@ -16,7 +16,7 @@ def model_deep():
     afct = 'sigmoid'
     #afct = 'tanh'
     #afct = 'softmax'
-    model.add(Dense(1, input_dim=1, activation=afct))
+    model.add(Dense(1, input_dim=1))
     model.add(Dense(NUM_T, activation=afct))
     model.add(Dense(NUM_C, activation=afct))
     model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
@@ -32,10 +32,10 @@ if __name__ == '__main__':
     # coefficients only
     labels = dataset[:,NUM_T+1:]
 
-    normalizer_features = StandardScaler()
+    normalizer_features = MaxAbsScaler() #StandardScaler()
     features_normalized = normalizer_features.fit_transform(features)
 
-    normalizer_labels = StandardScaler()
+    normalizer_labels = MaxAbsScaler() #StandardScaler()
     labels_normalized = normalizer_labels.fit_transform(labels)
 
     model = model_deep()
