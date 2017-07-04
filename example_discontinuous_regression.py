@@ -42,6 +42,7 @@ if __name__ == '__main__':
     model.fit(features_normalized, labels_normalized, epochs=300, batch_size=10)
 
     scores = model.evaluate(features_normalized, labels_normalized)
+    model.save('data_demo/model.h5')
     print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
 
 
