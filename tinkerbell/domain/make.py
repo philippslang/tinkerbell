@@ -1,4 +1,4 @@
-import point as pt
+import .point as pt
 import numpy as np
 
 
