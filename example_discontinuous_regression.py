@@ -12,14 +12,15 @@ from example_discontinuous_fromcsv import make_spline
 
 
 def model_deep():
-	model = Sequential()
-	model.add(Dense(1, input_dim=1, activation='relu'))
-	#model.add(Dense(NUM_T, activation='relu'))
-	model.add(Dense(NUM_C, activation='relu'))
-	#model.add(Dense(NUM_C+NUM_T, activation='relu'))
-	#model.add(Dense(NUM_C+NUM_T, activation='relu'))
-	model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
-	return model
+    model = Sequential()
+    afct = 'sigmoid'
+    #afct = 'tanh'
+    #afct = 'softmax'
+    model.add(Dense(1, input_dim=1, activation=afct))
+    model.add(Dense(NUM_T, activation=afct))
+    model.add(Dense(NUM_C, activation=afct))
+    model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
+    return model
 
 
 if __name__ == '__main__':
@@ -38,7 +39,7 @@ if __name__ == '__main__':
     labels_normalized = normalizer_labels.fit_transform(labels)
 
     model = model_deep()
-    model.fit(features_normalized, labels_normalized, epochs=200, batch_size=10)
+    model.fit(features_normalized, labels_normalized, epochs=300, batch_size=10)
 
     scores = model.evaluate(features_normalized, labels_normalized)
     print("\n%s: %.2f%%" % (model.metrics_names[1], scores[1]*100))
@@ -48,6 +49,7 @@ if __name__ == '__main__':
     features_test_normalized = normalizer_features.transform(features_test)
     labels_test_normalized = model.predict(features_test_normalized)
     labels_test = normalizer_labels.inverse_transform(labels_test_normalized)
+    print(labels_test)
     spl_test = [make_spline(np.r_[make_internal_knots(features_test[i][0]), labels_test[i]]) for i in range(len(labels_test))]
     fig = plt.figure() 
     ax = fig.add_subplot(111)
