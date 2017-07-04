@@ -1,5 +1,7 @@
 import .point as pt
+import .curve as cv
 import numpy as np
+import scipy.interpolate as spint
 
 
 def exponential_decline(y_i, d, x):
@@ -22,3 +24,7 @@ def points_exponential_discontinuous_decline_noisy(y_i, d, x_max, x_disc, y_jump
     ydata_noise = ydata * np.random.normal(noise_mean, noise, ydata.shape)
     ydata_noise[np.where(xdata >= x_disc)] = ydata_noise[np.where(xdata >= x_disc)] + y_i/y_jump_factor
     return [pt.Point(x, y) for x, y in zip(xdata, ydata_noise)]
+
+def curve_lsq_fixed_knots(points):
+    t, c, k = spint.splrep(*pts_coords, k=k, task=-1, t=t)
+    pass
