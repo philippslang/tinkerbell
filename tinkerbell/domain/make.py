@@ -1,5 +1,5 @@
-import .point as pt
-import .curve as cv
+from . import point as pt
+from . import curve as cv
 import numpy as np
 import scipy.interpolate as spint
 
@@ -18,13 +18,25 @@ def exponential_decline(y_i, d, x):
     return y_i*np.exp(-d*x)
 
 
-def points_exponential_discontinuous_decline_noisy(y_i, d, x_max, x_disc, y_jump_factor=5.0, x_min=0.0, num=50, noise=0.1, noise_mean=1.0):
-    xdata = np.linspace(x_min, x_max)
-    ydata = exponential_decline(y_i, d, xdata)
+def points_exponential_discontinuous_decline_noisy(yi, d, xmax, xdisc, y_jumpfactor=5.0, xmin=0.0, num=50, noise=0.1, noise_mean=1.0):
+    xdata = np.linspace(xmin, xmax)
+    ydata = exponential_decline(yi, d, xdata)
     ydata_noise = ydata * np.random.normal(noise_mean, noise, ydata.shape)
-    ydata_noise[np.where(xdata >= x_disc)] = ydata_noise[np.where(xdata >= x_disc)] + y_i/y_jump_factor
+    ydata_noise[np.where(xdata >= xdisc)] = ydata_noise[np.where(xdata >= xdisc)] + yi/y_jumpfactor
     return [pt.Point(x, y) for x, y in zip(xdata, ydata_noise)]
 
-def curve_lsq_fixed_knots(points):
-    t, c, k = spint.splrep(*pts_coords, k=k, task=-1, t=t)
-    pass
+
+def knots_four_heavy_right(xcenter, xmax, dx):
+    """
+    Internal knots.
+    """
+    return [xcenter-dx, xcenter, xcenter+dx, xmax-(xmax-xcenter+dx)/3]
+
+
+def curve_lsq_fixed_knots(points, t, k):
+    """
+    Points, internal knots and order.
+    """
+    points_xy = [pt.point_coordinates(points, i) for i in range(2)]
+    tck = spint.splrep(*points_xy, k=k, task=-1, t=t)
+    return cv.Curve(*tck)
