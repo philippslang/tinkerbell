@@ -1,0 +1,1 @@
+rcparams = {'shale.exp.k': 2, 'shale.exp.num_knots_internal': 4, 'shale.exp.csvfname': 'data_demo/shale_exp.csv'}
