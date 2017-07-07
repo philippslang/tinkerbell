@@ -1,6 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
+plt.style.use('ggplot')
+
 
 def render_points(ax, points):
     xcoords = [point.x for point in points]

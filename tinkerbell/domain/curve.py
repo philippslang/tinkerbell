@@ -47,12 +47,16 @@ class Curve:
         return flat_header(len(self.t), len(self.c))
 
 
+def flat_header_coefficients(num_cofficients):
+    return ['c{:0>3d}'.format(i) for i in range(num_cofficients)]
+
+
 def flat_header(num_knots, num_cofficients):
     """
     Returns tuple of strings denoting the columns of the flat representation.
     """
     knot_names = ['t{:0>3d}'.format(i) for i in range(num_knots)]
-    coefficient_names = ['c{:0>3d}'.format(i) for i in range(num_cofficients)]
+    coefficient_names = flat_header_coefficients(num_cofficients)
     return ('degree', 'num_knots', *knot_names, *coefficient_names)
 
 
@@ -72,6 +76,7 @@ class TestCurve(unittest.TestCase):
         self.assertEqual(curve_clone.k, curve.k)
         self.assertEqual(np.array_equal(curve_clone.t, curve.t), True)
         self.assertEqual(np.array_equal(curve_clone.c, curve.c), True)
+        print(curve.flat_header())
         self.assertEqual(len(curve_flat), len(curve.flat_header()))
             
 

@@ -4,35 +4,6 @@ import numpy as np
 import scipy.interpolate as spint
 
 
-def exponential_decline(y_i, d, x):
-    """
-    Parameters
-    ----------
-    y_i: float
-         Start value.
-    d: float
-       Decline rate (positive).
-    x: float
-       Independent variable.
-    """
-    return y_i*np.exp(-d*x)
-
-
-def points_exponential_discontinuous_decline_noisy(y0, d, xmax, xdisc, y_jumpfactor=5.0, xmin=0.0, num=50, noise=0.1, noise_mean=1.0):
-    xdata = np.linspace(xmin, xmax)
-    ydata = exponential_decline(y0, d, xdata)
-    ydata_noise = ydata * np.random.normal(noise_mean, noise, ydata.shape)
-    ydata_noise[np.where(xdata >= xdisc)] = ydata_noise[np.where(xdata >= xdisc)] + y0/y_jumpfactor
-    return [pt.Point(x, y) for x, y in zip(xdata, ydata_noise)]
-
-
-def knots_four_heavy_right(xcenter, xmax, dx):
-    """
-    Internal knots.
-    """
-    return [xcenter-dx, xcenter, xcenter+dx, xmax-(xmax-xcenter+dx)/3]
-
-
 def curve_lsq_fixed_knots(points, t, k):
     """
     Points, internal knots and order.
@@ -47,3 +18,8 @@ def num_knots_curve_lsq(k, num_internal_knots):
     Returns the number of total knots created by curve_lsq_fixed_knots.
     """
     return (k+1)*2+num_internal_knots
+
+
+def knots_from_internal_knots(k, internal_knots, xmin, xmax):
+    order = k+1
+    return np.r_[[xmin]*order, internal_knots, [xmax]*order]

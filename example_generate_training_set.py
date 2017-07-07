@@ -10,12 +10,12 @@ import numpy as np
 num_xdisc = 20
 num_realizations = 20
 xdiscspace = (10.0, 35.0)
-y0_mean = 50.0
+y0_mean = tbarc.rcparams['shale.exp.y0_mean']
 y0_stddev = 5.0
-d = y0_mean/50
+d = 0.1
 k = tbarc.rcparams['shale.exp.k']
-xmax = 50.0
-dx = 1.0
+xmax = y0_mean
+dx = tbarc.rcparams['shale.exp.d']
 
 num_knots = tbdmk.num_knots_curve_lsq(k, tbarc.rcparams['shale.exp.num_knots_internal'])
 columns = ('y0', 'xdisc', *tbdcv.flat_header(num_knots, num_knots))

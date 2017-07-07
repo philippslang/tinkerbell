@@ -2,7 +2,6 @@ import tinkerbell.domain.point as tbdpt
 import tinkerbell.domain.make as tbdmk
 
 
-
 def exponential_decline(y_i, d, x):
     """
     Parameters
@@ -25,17 +24,7 @@ def points_exponential_discontinuous_decline_noisy(yi, d, xmax, xdisc, y_jumpfac
     return [pt.Point(x, y) for x, y in zip(xdata, ydata_noise)]
 
 
-def knots_four_heavy_right(xcenter, xmax, dx):
-    """
-    Internal knots.
-    """
+def knots_internal_four_heavy_right(xcenter, xmax, dx):
     return [xcenter-dx, xcenter, xcenter+dx, xmax-(xmax-xcenter+dx)/3]
 
 
-def curve_lsq_fixed_knots(points, t, k):
-    """
-    Points, internal knots and order.
-    """
-    points_xy = [pt.point_coordinates(points, i) for i in range(2)]
-    tck = spint.splrep(*points_xy, k=k, task=-1, t=t)
-    return cv.Curve(*tck)
