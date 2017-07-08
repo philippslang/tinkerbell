@@ -1,3 +1,4 @@
+import numpy as np
 import tinkerbell.domain.point as tbdpt
 import tinkerbell.domain.make as tbdmk
 
@@ -21,7 +22,7 @@ def points_exponential_discontinuous_decline_noisy(yi, d, xmax, xdisc, y_jumpfac
     ydata = exponential_decline(yi, d, xdata)
     ydata_noise = ydata * np.random.normal(noise_mean, noise, ydata.shape)
     ydata_noise[np.where(xdata >= xdisc)] = ydata_noise[np.where(xdata >= xdisc)] + yi/y_jumpfactor
-    return [pt.Point(x, y) for x, y in zip(xdata, ydata_noise)]
+    return [tbdpt.Point(x, y) for x, y in zip(xdata, ydata_noise)]
 
 
 def knots_internal_four_heavy_right(xcenter, xmax, dx):
