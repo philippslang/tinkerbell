@@ -21,7 +21,7 @@ def points_exponential_discontinuous_decline_noisy(yi, d, xmax, xdisc, y_jumpfac
     xdata = np.linspace(xmin, xmax)
     ydata = exponential_decline(yi, d, xdata)
     ydata_noise = ydata * np.random.normal(noise_mean, noise, ydata.shape)
-    ydata_noise[np.where(xdata >= xdisc)] = ydata_noise[np.where(xdata >= xdisc)] + yi/y_jumpfactor
+    ydata_noise[np.where(xdata > xdisc)] = ydata_noise[np.where(xdata > xdisc)] + yi/y_jumpfactor
     return [tbdpt.Point(x, y) for x, y in zip(xdata, ydata_noise)]
 
 
