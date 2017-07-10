@@ -10,10 +10,10 @@ def render_points(ax, points):
     ax.plot(xcoords, ycoords, 'x')
 
 
-def render_curve(ax, curve):
+def render_curve(ax, curve, label=None):
     minmax = np.min(curve.t), np.max(curve.t)
     xrender = np.linspace(*minmax, 200)
-    ax.plot(xrender, curve(xrender), lw=2)
+    ax.plot(xrender, curve(xrender), lw=2, label=label)
 
 
 def plot_points(pointsiterable):
@@ -27,14 +27,20 @@ def plot_points(pointsiterable):
     plt.show()
 
 
-def plot_curves(curvessiterable):
+def plot_curves(curvessiterable, labels=None):
     """
     Takes a list of curves.
     """
+    make_legend = True
+    if not labels:
+        labels = [None] * len(curvessiterable)
+        make_legend = False
     fig = plt.figure() 
     ax = fig.add_subplot(111)    
-    for curve in curvessiterable:
-        render_curve(ax, curve)
+    for curve, label in zip(curvessiterable, labels):
+        render_curve(ax, curve, label)
+    if make_legend:
+        ax.legend()
     plt.show()
 
 
