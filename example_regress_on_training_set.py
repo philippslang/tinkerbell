@@ -5,7 +5,7 @@ import tinkerbell.app.make as tbamk
 import tinkerbell.app.rcparams as tbarc
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import MaxAbsScaler
+import sklearn.preprocessing as preproc
 
 from keras.models import Sequential, load_model
 from keras.layers import Dense
@@ -28,20 +28,19 @@ def model_deep():
 data = pd.read_csv(tbarc.rcparams['shale.exp.csvfname'])
 
 features = data['xdisc']
-# single feature for now
-features = features.values.reshape(-1, 1)
-normalizer_features = MaxAbsScaler()
+features = features.values.reshape(-1, 1) # single feature for now
+normalizer_features = preproc.MinMaxScaler() 
 features_normalized = normalizer_features.fit_transform(features)
 
 labels_header = tbdcv.flat_header_coefficients(num_knots)
 labels = data[labels_header]
-normalizer_labels = MaxAbsScaler()
+normalizer_labels = preproc.MinMaxScaler() 
 labels_normalized = normalizer_labels.fit_transform(labels)
 
 fname_model = 'data_demo/model.h5'
-if 0:
+if 1:
     model = model_deep()
-    model.fit(features_normalized, labels_normalized, epochs=300, batch_size=10)
+    model.fit(features_normalized, labels_normalized, epochs=400, batch_size=30)
     scores = model.evaluate(features_normalized, labels_normalized)
     model.save(fname_model)
 else:

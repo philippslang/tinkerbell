@@ -7,8 +7,8 @@ import pandas as pd
 import numpy as np
 
 
-num_xdisc = 20
-num_realizations = 20
+num_xdisc = 30
+num_realizations = 30
 xdiscspace = (10.0, 35.0)
 y0_mean = tbarc.rcparams['shale.exp.y0_mean']
 y0_stddev = 5.0
