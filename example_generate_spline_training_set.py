@@ -35,4 +35,4 @@ for xdisc in np.linspace(*xdiscspace, num_xdisc):
         data.loc[idatarow, 2:] = crv.to_flat() 
         idatarow += 1
 
-data.to_csv(tbarc.rcparams['shale.exp.csvfname'], index=False)
+data.to_csv(tbarc.rcparams['shale.exp.csvsplinefname'], index=False)

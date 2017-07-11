@@ -18,7 +18,7 @@ def exponential_decline(y_i, d, x):
 
 
 def points_exponential_discontinuous_decline_noisy(yi, d, xmax, xdisc, y_jumpfactor=5.0, xmin=0.0, num=50, noise=0.1, noise_mean=1.0):
-    xdata = np.linspace(xmin, xmax)
+    xdata = np.linspace(xmin, xmax, num)
     ydata = exponential_decline(yi, d, xdata)
     ydata_noise = ydata * np.random.normal(noise_mean, noise, ydata.shape)
     ydata_noise[np.where(xdata > xdisc)] = ydata_noise[np.where(xdata > xdisc)] + yi/y_jumpfactor
