@@ -25,7 +25,7 @@ def model_deep():
     model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
     return model
 
-data = pd.read_csv(tbarc.rcparams['shale.exp.csvfname'])
+data = pd.read_csv(tbarc.rcparams['shale.exp.csvsplinefname'])
 
 features = data['xdisc']
 features = features.values.reshape(-1, 1) # single feature for now

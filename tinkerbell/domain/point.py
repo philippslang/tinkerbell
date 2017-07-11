@@ -24,6 +24,12 @@ def point_coordinates(pts, idx=0):
     """
     return [pt[idx] for pt in pts]
 
+def from_coordinates(xcoords, ycoords):
+    """
+    Returns list of points from coordinate list.
+    """
+    return [Point(x, y) for x, y in zip(xcoords, ycoords)]
+
 
 def read_points(fname):
     with open(fname) as f:
