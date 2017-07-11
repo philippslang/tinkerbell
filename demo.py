@@ -70,8 +70,8 @@ def fit_lstm(train, batch_size, nb_epoch, neurons):
     model.add(Dense(1))
     model.compile(loss='mean_squared_error', optimizer='adam')
     for i in range(nb_epoch):
-        print('epoch', i)
-        model.fit(X, y, epochs=1, batch_size=batch_size, verbose=0, shuffle=False)
+        print('epoch', i, '\\', nb_epoch)
+        model.fit(X, y, epochs=1, batch_size=batch_size, verbose=1, shuffle=False)
         model.reset_states()
     return model
 
@@ -89,6 +89,10 @@ series = read_csv('time_demo.csv', header=1, parse_dates=[0], index_col=0, squee
 #pyplot.show()
 #exit()
 
+icutoff = -12
+num_epochs = 3000
+num_neurons = 4
+
 # transform data to be stationary
 raw_values = series.values
 diff_values = difference(raw_values, 1)
@@ -98,47 +102,37 @@ supervised = timeseries_to_supervised(diff_values, 1)
 supervised_values = supervised.values
 
 # split data into train and test-sets
-#icutoff = -12
-icutoff = -50
 train, test = supervised_values[0:icutoff], supervised_values[icutoff:]
 
 # transform the scale of the data
 scaler, train_scaled, test_scaled = scale(train, test)
 
-# repeat experiment
-repeats = 30
-error_scores = list()
-for r in range(repeats):
-    print('repeat', r)
-    # fit the model
-    lstm_model = fit_lstm(train_scaled, 1, 3000, 4)
-    # forecast the entire training dataset to build up state for forecasting
-    train_reshaped = train_scaled[:, 0].reshape(len(train_scaled), 1, 1)
-    lstm_model.predict(train_reshaped, batch_size=1)
-    # walk-forward validation on the test data
-    predictions = list()
-    for i in range(len(test_scaled)):
-        print('test', i)
-        # make one-step forecast
-        X, y = test_scaled[i, 0:-1], test_scaled[i, -1]
-        yhat = forecast_lstm(lstm_model, 1, X)
-        # invert scaling
-        yhat = invert_scale(scaler, X, yhat)
-        # invert differencing
-        yhat = inverse_difference(raw_values, yhat, len(test_scaled)+1-i)
-        # store forecast
-        predictions.append(yhat)
-    # report performance
-    rmse = sqrt(mean_squared_error(raw_values[icutoff:], predictions))
-    print('%d) Test RMSE: %.3f' % (r+1, rmse))
-    error_scores.append(rmse)
-    pyplot.plot(raw_values[icutoff:])
-    pyplot.plot(predictions)
-    pyplot.show()
+# fit the model
+lstm_model = fit_lstm(train_scaled, 1, num_epochs, num_neurons)
+# forecast the entire training dataset to build up state for forecasting
+train_reshaped = train_scaled[:, 0].reshape(len(train_scaled), 1, 1)
+lstm_model.predict(train_reshaped, batch_size=1)
 
-# summarize results
-results = DataFrame()
-results['rmse'] = error_scores
-print(results.describe())
-results.boxplot()
+# walk-forward validation on the test data
+predictions = list()
+for i in range(len(test_scaled)):
+    print('forcasting', i)
+    # make one-step forecast
+    X, y = test_scaled[i, 0:-1], test_scaled[i, -1]
+    yhat = forecast_lstm(lstm_model, 1, X)
+    # invert scaling
+    yhat = invert_scale(scaler, X, yhat)
+    # invert differencing
+    yhat = inverse_difference(raw_values, yhat, len(test_scaled)+1-i)
+    # store forecast
+    predictions.append(yhat)
+    expected = raw_values[len(train) + i + 1]
+    print('Month=%d, Predicted=%f, Expected=%f' % (i+1, yhat, expected))
+
+# report performance
+rmse = sqrt(mean_squared_error(raw_values[icutoff:], predictions))
+print('Test RMSE: %.3f' % rmse)
+# line plot of observed vs predicted
+pyplot.plot(raw_values[icutoff:])
+pyplot.plot(predictions)
 pyplot.show()
