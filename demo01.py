@@ -134,7 +134,7 @@ if VERBOSITY > 3:
 
 fname_model = 'data_demo/model_lstm_exp.h5'
 if 1:
-    model = fit_lstm(train_scaled, 1, 1500, 3)
+    model = fit_lstm(train_scaled, 1, 1000, 4)
     model.save(fname_model)
 else:
     model = kem.load_model(fname_model)
