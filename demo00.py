@@ -77,7 +77,8 @@ def invert_scale(scaler, X, value):
     return inverted[0, -1]
 
 
-series = pd.read_csv('shampoo-sales.csv', parse_dates=[0], index_col=0, date_parser=dateparser)
+series = pd.read_csv('shampoo-sales.csv', parse_dates=[0], index_col=0, date_parser=dateparser).
+itrainingend = math.ceil(len(series)/3)
 raw_values = series.values
 if VERBOSITY > 1:
     print('RAW')
@@ -113,9 +114,7 @@ supervised = timeseries_to_supervised(stationary, 1)
 if VERBOSITY > 1:
     print('SUPERVISED')        
     print(supervised.head())
-
-
-itrainingend = math.ceil(len(supervised)/3) 
+ 
 train, test = supervised.iloc[:itrainingend, :], supervised.iloc[itrainingend:, :]
 if VERBOSITY > 3:
     print('TRAIN-TEST')    
@@ -131,7 +130,7 @@ if VERBOSITY > 3:
     print(test_scaled)
 
 fname_model = 'data_demo/model_lstm.h5'
-if 0:
+if 1:
     model = fit_lstm(train_scaled, 1, 3000, 4)
     model.save(fname_model)
 else:
@@ -155,9 +154,9 @@ for i in range(len(test_scaled)):
 	print('Month=%d, Predicted=%f, Expected=%f' % (i+1, yhat, expected))
  
 # report performance
-rmse = math.sqrt(skmet.mean_squared_error(raw_values[itrainingend+1:], predictions))
+rmse = math.sqrt(skmet.mean_squared_error(raw_values[itrainingend:], predictions))
 print('Test RMSE: %.3f' % rmse)
 # line plot of observed vs predicted
-plt.plot(raw_values[itrainingend+1:])
+plt.plot(raw_values[itrainingend:])
 plt.plot(predictions)
 plt.show()
