@@ -4,12 +4,13 @@ import pandas as pd
 from matplotlib import pyplot as plt
 import numpy as np
 import math
-import sklearn.preprocessing as preproc
+import sklearn.preprocessing as skprep
+import sklearn.metrics as skmet
 
 import keras.models as kem
 import keras.layers as kel
 
-VERBOSITY = 2
+VERBOSITY = 1
 
 def dateparser(x):
     return pd.datetime.strptime('19'+x, '%Y-%b')
@@ -30,17 +31,21 @@ def difference(dataset, interval=1):
     return pd.Series(diff)
 
 def inverse_difference(history, yhat, interval=1):
-    return yhat + history.iat[-interval, 0]
+    try:
+        val = yhat + history.iat[-interval, 0]
+    except:
+        val = yhat + history[-interval, 0]
+    return val
 
 def scale(train, test):
     # fit scaler
-    scaler = preproc.MinMaxScaler(feature_range=(-1, 1))
-    train = train.values.reshape(-1, 1)
+    scaler = skprep.MinMaxScaler(feature_range=(-1, 1))
+    train = train.values.reshape(train.shape[0], train.shape[1])
     scaler = scaler.fit(train)
     # transform train    
     train_scaled = scaler.transform(train)
     # transform test
-    test = test.values.reshape(-1, 1)
+    test = test.values.reshape(test.shape[0], test.shape[1])
     test_scaled = scaler.transform(test)
     return scaler, train_scaled, test_scaled
  
@@ -52,11 +57,28 @@ def fit_lstm(train, batch_size, nb_epoch, neurons):
     model.add(kel.Dense(1))
     model.compile(loss='mean_squared_error', optimizer='adam')
     for i in range(nb_epoch):
-        model.fit(X, y, epochs=1, batch_size=batch_size, verbose=0, shuffle=False)
+        verbose = VERBOSITY > 2
+        if VERBOSITY > 0:
+            print('EPOCH', i, '\\', nb_epoch)
+        model.fit(X, y, epochs=1, batch_size=batch_size, verbose=verbose, shuffle=False)
         model.reset_states()
     return model
 
+def forecast_lstm(model, batch_size, X):
+    X = X.reshape(1, 1, len(X))
+    yhat = model.predict(X, batch_size=batch_size)
+    return yhat[0,0]
+
+def invert_scale(scaler, X, value):
+    new_row = [x for x in X] + [value]
+    vals = np.array(new_row)
+    vals = vals.reshape(1, len(vals))
+    inverted = scaler.inverse_transform(vals)
+    return inverted[0, -1]
+
+
 series = pd.read_csv('shampoo-sales.csv', parse_dates=[0], index_col=0, date_parser=dateparser)
+raw_values = series.values
 if VERBOSITY > 1:
     print('RAW')
     print(series.head())
@@ -94,11 +116,12 @@ if VERBOSITY > 1:
 
 
 itrainingend = math.ceil(len(supervised)/3) 
-train, test = supervised.iloc[:itrainingend, :-1], supervised.iloc[itrainingend:, -1:]
+train, test = supervised.iloc[:itrainingend, :], supervised.iloc[itrainingend:, :]
 if VERBOSITY > 3:
     print('TRAIN-TEST')    
     print(itrainingend)    
     print(train)
+    print(train.shape)
     print(test)
 
 scaler, train_scaled, test_scaled = scale(train, test)
@@ -108,8 +131,33 @@ if VERBOSITY > 3:
     print(test_scaled)
 
 fname_model = 'data_demo/model_lstm.h5'
-if 1:
+if 0:
     model = fit_lstm(train_scaled, 1, 3000, 4)
     model.save(fname_model)
 else:
     model = kem.load_model(fname_model)
+
+train_reshaped = train_scaled[:, 0].reshape(len(train_scaled), 1, 1)
+model.predict(train_reshaped, batch_size=1)
+
+predictions = []
+for i in range(len(test_scaled)):
+	# make one-step forecast
+	X, y = test_scaled[i, 0:-1], test_scaled[i, -1]
+	yhat = forecast_lstm(model, 1, X)
+	# invert scaling
+	yhat = invert_scale(scaler, X, yhat)
+	# invert differencing
+	yhat = inverse_difference(raw_values, yhat, len(test_scaled)+1-i)
+	# store forecast
+	predictions.append(yhat)
+	expected = raw_values[len(train) + i + 1]
+	print('Month=%d, Predicted=%f, Expected=%f' % (i+1, yhat, expected))
+ 
+# report performance
+rmse = math.sqrt(skmet.mean_squared_error(raw_values[itrainingend+1:], predictions))
+print('Test RMSE: %.3f' % rmse)
+# line plot of observed vs predicted
+plt.plot(raw_values[itrainingend+1:])
+plt.plot(predictions)
+plt.show()
