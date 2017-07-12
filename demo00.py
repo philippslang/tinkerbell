@@ -77,7 +77,7 @@ def invert_scale(scaler, X, value):
     return inverted[0, -1]
 
 
-series = pd.read_csv('shampoo-sales.csv', parse_dates=[0], index_col=0, date_parser=dateparser).
+series = pd.read_csv('shampoo-sales.csv', parse_dates=[0], index_col=0, date_parser=dateparser)
 itrainingend = math.ceil(len(series)/3)
 raw_values = series.values
 if VERBOSITY > 1:
@@ -115,7 +115,7 @@ if VERBOSITY > 1:
     print('SUPERVISED')        
     print(supervised.head())
  
-train, test = supervised.iloc[:itrainingend, :], supervised.iloc[itrainingend:, :]
+train, test = supervised.iloc[:itrainingend-1, :], supervised.iloc[itrainingend-1:, :] # since this is one short (first)
 if VERBOSITY > 3:
     print('TRAIN-TEST')    
     print(itrainingend)    
@@ -130,8 +130,8 @@ if VERBOSITY > 3:
     print(test_scaled)
 
 fname_model = 'data_demo/model_lstm.h5'
-if 1:
-    model = fit_lstm(train_scaled, 1, 3000, 4)
+if 0:
+    model = fit_lstm(train_scaled, 1, 1500, 1)
     model.save(fname_model)
 else:
     model = kem.load_model(fname_model)
@@ -144,6 +144,7 @@ for i in range(len(test_scaled)):
 	# make one-step forecast
 	X, y = test_scaled[i, 0:-1], test_scaled[i, -1]
 	yhat = forecast_lstm(model, 1, X)
+    #yhat = y
 	# invert scaling
 	yhat = invert_scale(scaler, X, yhat)
 	# invert differencing
