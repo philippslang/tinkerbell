@@ -12,10 +12,8 @@ import keras.layers as kel
 
 VERBOSITY = 3
 
-def dateparser(x):
-    return pd.datetime.strptime('19'+x, '%Y-%b')
 
-def dateparsertb(x):
+def dateparser(x):
     return pd.datetime.strptime(x, '%y')
 
 def timeseries_to_supervised(data, lag=1):
@@ -80,8 +78,7 @@ def invert_scale(scaler, X, value):
     return inverted[0, -1]
 
 
-series = pd.read_csv('shampoo-sales.csv', parse_dates=[0], index_col=0, date_parser=dateparser)
-#series = pd.read_csv('time_demo.csv', parse_dates=[0], index_col=0, date_parser=dateparsertb)
+series = pd.read_csv('time_demo.csv', parse_dates=[0], index_col=0, date_parser=dateparser)
 itrainingend = math.ceil(len(series)/3)
 raw_values = series.values
 if VERBOSITY > 1:
@@ -119,6 +116,7 @@ if VERBOSITY > 1:
     print('SUPERVISED')        
     print(supervised.head())
  
+
 train, test = supervised.iloc[:itrainingend-1, :], supervised.iloc[itrainingend-1:, :] # since this is one short (first)
 if VERBOSITY > 3:
     print('TRAIN-TEST')    
@@ -133,8 +131,9 @@ if VERBOSITY > 3:
     print(train_scaled)
     print(test_scaled)
 
-fname_model = 'data_demo/model_lstm.h5'
-if 0:
+
+fname_model = 'data_demo/model_lstm_exp.h5'
+if 1:
     model = fit_lstm(train_scaled, 1, 1500, 1)
     model.save(fname_model)
 else:
