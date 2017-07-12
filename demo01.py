@@ -79,7 +79,7 @@ def invert_scale(scaler, X, value):
 
 
 series = pd.read_csv('time_demo.csv', parse_dates=[0], index_col=0, date_parser=dateparser)
-itrainingend = math.ceil(len(series)/4)
+itrainingend = 2#math.ceil(len(series)/4)
 raw_values = series.values
 if VERBOSITY > 1:
     print('RAW')
@@ -134,7 +134,7 @@ if VERBOSITY > 3:
 
 fname_model = 'data_demo/model_lstm_exp.h5'
 if 1:
-    model = fit_lstm(train_scaled, 1, 3000, 3)
+    model = fit_lstm(train_scaled, 1, 1500, 3)
     model.save(fname_model)
 else:
     model = kem.load_model(fname_model)
