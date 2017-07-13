@@ -133,7 +133,7 @@ if VERBOSITY > 3:
 
 
 fname_model = 'data_demo/model_lstm_exp.h5'
-if 1:
+if 0:
     model = fit_lstm(train_scaled, 1, 1000, 4)
     model.save(fname_model)
 else:
@@ -155,7 +155,7 @@ for i in range(len(test_scaled)):
     # store forecast
     predictions.append(yhat)
     expected = raw_values[len(train) + i + 1]
-    print('Month=%d, Predicted=%f, Expected=%f' % (i+1, yhat, expected))
+    print('Month=%d, Input=%f, Predicted=%f, Expected=%f' % (i+1, X, yhat, expected))
  
 # report performance
 rmse = math.sqrt(skmet.mean_squared_error(raw_values[itrainingend:], predictions))
