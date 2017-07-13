@@ -37,21 +37,29 @@ def lstm(features, labels, batch_size, num_epochs, num_neurons):
     return model
 
 
-series = pd.read_csv('data_demo/shale_time_exp.csv')
+series = pd.read_csv('data_demo/shale_time_stage_exp.csv')
 print('SERIES')
 print(series.head())
 
 # we predict from previous y value, so features = labels with
 # a shift. first a 1D array
-y = series.iloc[:, -1].values
+y = series['y'].values
 print('Y')
 print(y, y.shape)
 
+stage =  series['stage'].values
+print('STAGE')
+print(stage, stage.shape)
+
 # stationary features (delta y), essentially start at time = 1, 
 # so one short of all labels
-ydelta = np.diff(y)
-print('YDELTA')
-print(ydelta, ydelta.shape)
+ydeltaoutput = np.diff(y)
+print('YDELTAOUTPUT')
+print(ydeltaoutput, ydeltaoutput.shape)
+
+stagedeltainput = np.diff(stage)
+print('STAGEDELTA')
+print(stagedeltainput, stagedeltainput.shape)
 
 # bring the labels to shape
 yinput = y[:-1]
@@ -59,21 +67,21 @@ print('YINPUT')
 print(yinput, yinput.shape)
 
 # normalize both
-yinput = yinput.reshape(-1, 1)
-normalizer_yinput = skprep.MinMaxScaler(feature_range=(-1, 1))
-yinput_normalized = normalizer_yinput.fit_transform(yinput)
-print('YINPUT NORM')
-print(yinput_normalized, yinput_normalized.shape)
-ydelta = ydelta.reshape(-1, 1)
-normalizer_ydelta = skprep.MinMaxScaler(feature_range=(-1, 1))
-ydelta_normalized = normalizer_ydelta.fit_transform(ydelta)
-print('YDELTA NORM')
+input = np.transpose(np.array([yinput, stagedeltainput])) #yinput.reshape(-1, 1)
+normalizer_input = skprep.MinMaxScaler(feature_range=(-1, 1))
+input_normalized = normalizer_input.fit_transform(input)
+print('INPUT NORM')
+print(input_normalized, input_normalized.shape)
+ydeltaoutput = ydeltaoutput.reshape(-1, 1)
+normalizer_ydeltaoutput = skprep.MinMaxScaler(feature_range=(-1, 1))
+ydelta_normalized = normalizer_ydeltaoutput.fit_transform(ydeltaoutput)
+print('YDELTAOUTPUT NORM')
 print(ydelta_normalized, ydelta_normalized.shape)
 
 
-fname_model = 'data_demo/model_lstm_exp.h5'
+fname_model = 'data_demo/model_lstm_stages_exp.h5'
 if 1:
-    model = lstm(yinput_normalized, ydelta_normalized, 1, 1000, 4)
+    model = lstm(input_normalized, ydelta_normalized, 1, 500, 4)
     model.save(fname_model)
 else:
     model = kem.load_model(fname_model)
@@ -82,14 +90,15 @@ yhat = [y[0]-3.0]
 for i in range(1, len(y)-1):
     # input is last value
     yprevious = yhat[-1]
-    yinput = np.array([[yprevious]])
-    yinput_normalized = normalizer_yinput.transform(yinput)
+    stagedeltacurrent = stagedeltainput[i-1]
+    yinput = np.array([[yprevious,stagedeltacurrent]])
+    yinput_normalized = normalizer_input.transform(yinput)
     yinput_normalized = yinput_normalized.reshape(yinput_normalized.shape[0], 1, 
       yinput_normalized.shape[1])
     ydelta_normalized = model.predict(yinput_normalized, batch_size=1)
-    ydelta = normalizer_ydelta.inverse_transform(ydelta_normalized)
-    ydelta = ydelta[0, 0]
-    yhat += [yprevious+ydelta]
+    ydeltaoutput = normalizer_ydeltaoutput.inverse_transform(ydelta_normalized)
+    ydeltaoutput = ydeltaoutput[0, 0]
+    yhat += [yprevious+ydeltaoutput]
 
 plt.plot(yhat, label='yhat')
 plt.plot(y, label='y')

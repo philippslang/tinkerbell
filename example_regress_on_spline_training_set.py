@@ -1,3 +1,7 @@
+"""
+Multilayer perceptron regression model
+"""
+
 import tinkerbell.app.plot as tbapl
 import tinkerbell.domain.make as tbdmk
 import tinkerbell.domain.curve as tbdcv
