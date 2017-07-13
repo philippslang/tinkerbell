@@ -2,6 +2,7 @@
 Recurrent neural network model
 
 TODO
+train on multiple curves
 experiment with lag (diff n)
 experiment with number of features (differences of 2, 4, 6 last observations; 
   these would also have to include the stage value)
@@ -80,13 +81,13 @@ print(ydelta_normalized, ydelta_normalized.shape)
 
 
 fname_model = 'data_demo/model_lstm_stages_exp.h5'
-if 1:
-    model = lstm(input_normalized, ydelta_normalized, 1, 500, 4)
+if 0:
+    model = lstm(input_normalized, ydelta_normalized, 1, 1500, 4)
     model.save(fname_model)
 else:
     model = kem.load_model(fname_model)
 
-yhat = [y[0]-3.0]
+yhat = [y[0]]
 for i in range(1, len(y)-1):
     # input is last value
     yprevious = yhat[-1]
