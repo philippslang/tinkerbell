@@ -61,7 +61,7 @@ STYLEFALLBACK = {'linestyle': 'solid', 'linewidth': 2, 'alpha': 0.7}
 appstyletomplstyle = {'p': {'marker': 'x', 'linestyle': 'None'}, 'l': STYLEFALLBACK}
 
 
-def plot(xyarraytuplesiterable, styles=[], labels=[]):
+def plot(xyarraytuplesiterable, styles=[], labels=[], show=True):
     if not styles:
         styles = ['p'] * len(xyarraytuplesiterable)
     legend = True
@@ -84,4 +84,5 @@ def plot(xyarraytuplesiterable, styles=[], labels=[]):
         i = i+1
     if legend:
         plt.legend()
-    plt.show()
+    if show:
+        plt.show()
