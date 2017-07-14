@@ -6,11 +6,13 @@ import tinkerbell.app.plot as tbapl
 y0 = 50.0
 d = 0.1
 xmax = y0
-pts_exp_cont = tbamk.points_exponential_discontinuous_decline_noisy(y0, d, xmax, xmax, 1.0)
+pmax = 6
+xdisc = 2.0**pmax
+pts_exp_cont, _ = tbamk.points_exponential_discontinuous_declinebase2_noisy(y0, d, pmax, xdisc)
 tbdpt.write_points('data_demo/points_01.json', pts_exp_cont)
 
 xdisc = 20.0
-pts_exp_discont = tbamk.points_exponential_discontinuous_decline_noisy(y0, d, xmax, xdisc)
+pts_exp_discont, _ = tbamk.points_exponential_discontinuous_declinebase2_noisy(y0, d, pmax, xdisc)
 tbdpt.write_points('data_demo/points_02.json', pts_exp_discont)
 
 xycoords_cont = tbdpt.point_coordinates(pts_exp_cont)

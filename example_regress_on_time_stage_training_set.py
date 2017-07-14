@@ -23,6 +23,7 @@ import keras.models as kem
 import keras.layers as kel
 import tinkerbell.app.plot as tbapl
 
+FNAME = 'data_demo/model_lstm_stages_exp.h5'
 
 def lstm(features, labels, batch_size, num_epochs, num_neurons):
     print('NEURONS', num_neurons)
@@ -82,14 +83,14 @@ def do_the_thing(fit=True, num_epochs=500, num_neurons=4):
     print(ydelta_normalized, ydelta_normalized.shape)
 
 
-    fname_model = 'data_demo/model_lstm_stages_exp.h5'
     if fit:
         model = lstm(input_normalized, ydelta_normalized, 1, num_epochs, num_neurons)
-        model.save(fname_model)
+        model.save(FNAME)
     else:
-        model = kem.load_model(fname_model)
+        model = kem.load_model(FNAME)
 
     yhat = [y[0]]
+    print(yhat)
     for i in range(1, len(y)):
         # input is last value
         yprevious = yhat[-1]
@@ -103,7 +104,7 @@ def do_the_thing(fit=True, num_epochs=500, num_neurons=4):
         ydeltaoutput = ydeltaoutput[0, 0]
         yhat += [yprevious+ydeltaoutput]
 
-    xplot = np.arange(len(y))
+    xplot = series['x'].values
     tbapl.plot([(xplot, y), (xplot, yhat)], styles=['p', 'l'], labels=['ytrain', 'yhat'])
 
 if __name__ == '__main__':

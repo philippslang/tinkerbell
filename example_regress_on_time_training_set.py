@@ -80,5 +80,5 @@ for i in range(1, len(y)):
     ydelta = ydelta[0, 0]
     yhat += [yprevious+ydelta]
 
-xplot = np.arange(len(y))
+xplot = series['x'].values
 tbapl.plot([(xplot, y), (xplot, yhat)], styles=['p', 'l'], labels=['y', 'yhat'])

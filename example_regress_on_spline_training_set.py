@@ -44,7 +44,7 @@ labels_normalized = normalizer_labels.fit_transform(labels)
 fname_model = 'data_demo/model.h5'
 if 0:
     model = model_deep()
-    model.fit(features_normalized, labels_normalized, epochs=400, batch_size=30)
+    model.fit(features_normalized, labels_normalized, epochs=700, batch_size=30)
     scores = model.evaluate(features_normalized, labels_normalized)
     model.save(fname_model)
 else:

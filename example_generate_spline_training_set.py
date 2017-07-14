@@ -14,7 +14,8 @@ y0_mean = tbarc.rcparams['shale.exp.y0_mean']
 y0_stddev = 5.0
 d = 0.1
 k = tbarc.rcparams['shale.exp.k']
-xmax = y0_mean
+pmax = 6
+xmax = 2.0**6
 dx = tbarc.rcparams['shale.exp.dx']
 
 num_knots = tbdmk.num_knots_curve_lsq(k, tbarc.rcparams['shale.exp.num_knots_internal'])
@@ -26,7 +27,7 @@ np.random.seed(42)
 for xdisc in np.linspace(*xdiscspace, num_xdisc):
     for irealization in range(num_realizations):
         y0 = y0_mean
-        pts = tbamk.points_exponential_discontinuous_decline_noisy(y0, d, xmax, xdisc)
+        pts, _ = tbamk.points_exponential_discontinuous_declinebase2_noisy(y0, d, pmax, xdisc)
         t = tbamk.knots_internal_four_heavy_right(xdisc, xmax, dx)
         crv = tbdmk.curve_lsq_fixed_knots(pts, t, k)
 

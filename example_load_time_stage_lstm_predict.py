@@ -25,19 +25,22 @@ import tinkerbell.app.plot as tbapl
 import tinkerbell.domain.point as tbdpt
 import keras.models as kem
 import example_regress_on_time_stage_training_set
+import example_generate_time_stage_training_set
+
 
 def do_the_thing():
   y0 = tbarc.rcparams['shale.exp.y0_mean']
-  d = 0.05
-  xmax = 100.0
-  num_points = 100
-  xdisc = 45.0
-  ixdisc = int(xdisc/(xmax/num_points))
+  d = example_generate_time_stage_training_set.D
+  xmax = example_generate_time_stage_training_set.XMAX
+  num_points = example_generate_time_stage_training_set.NUM_POINTS
+  xdisc = example_generate_time_stage_training_set.XDISC
 
   np.random.seed(42)
-  pts = tbamk.points_exponential_discontinuous_decline_noisy(y0, d, xmax, xdisc, num=num_points)
+  pts, ixdisc = tbamk.points_exponential_discontinuous_declinelinear_noisy(y0, d, xmax, xdisc, num=num_points)
 
-  ycomp_pts, xcomp_pts =  np.array(tbdpt.point_coordinates(pts, 1)), np.array(tbdpt.point_coordinates(pts, 0))
+  ycomp_pts, xcomp_pts =  tbdpt.point_coordinates(pts)
+
+  tbapl.plot([(xcomp_pts, ycomp_pts)])
 
   stagedelta = np.zeros_like(ycomp_pts)
   stagedelta[ixdisc] = 1.0
@@ -52,7 +55,7 @@ def do_the_thing():
   normalizer_ydeltaoutput = skprep.MinMaxScaler(feature_range=(-1, 1))
   normalizer_ydeltaoutput.fit(ydeltaoutput)
 
-  fname_model = 'data_demo/model_lstm_stages_exp.h5'
+  fname_model = example_regress_on_time_stage_training_set.FNAME 
   model = kem.load_model(fname_model)
 
   yhat = [ycomp_pts[0]]
@@ -66,11 +69,12 @@ def do_the_thing():
       ydelta = ydelta[0, 0]
       yhat += [yhat[-1]+ydelta]
 
-  xplot = np.arange(len(ycomp_pts))
-  tbapl.plot([(xplot, ycomp_pts), (xplot, yhat)], styles=['p', 'l'], labels=['yblind', 'yhat'])
+  #tbapl.plot([(xplot, ycomp_pts), (xplot, yhat)], styles=['p', 'l'], labels=['yblind', 'yhat'])
+  
+
 
 if __name__ == '__main__':
-  example_regress_on_time_stage_training_set.do_the_thing(True, 1500, 3)
+  #example_regress_on_time_stage_training_set.do_the_thing(True, 1000, 4)
   do_the_thing()
 
 
