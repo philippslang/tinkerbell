@@ -42,7 +42,7 @@ normalizer_labels = preproc.MinMaxScaler()
 labels_normalized = normalizer_labels.fit_transform(labels)
 
 fname_model = 'data_demo/model.h5'
-if 1:
+if 0:
     model = model_deep()
     model.fit(features_normalized, labels_normalized, epochs=400, batch_size=30)
     scores = model.evaluate(features_normalized, labels_normalized)
@@ -62,4 +62,6 @@ labels_test = normalizer_labels.inverse_transform(labels_test_normalized)
 internal_knots_tests = [tbamk.knots_internal_four_heavy_right(xdisc[0], xmax, dx) for xdisc in features_test]
 knots_tests = [tbdmk.knots_from_internal_knots(k, internal_knots, xmin, xmax) for internal_knots in internal_knots_tests]
 curves_test = [tbdcv.Curve(knots_tests[i], labels_test[i], k) for i in range(len(features_test))]
-tbapl.plot_curves(curves_test, ['{:.1f}'.format(features_test[i][0]) for i in range(len(features_test))])
+xycoords_crvtest = [crv.xycoordinates() for crv in curves_test]
+styles = ['l' for _ in curves_test]
+tbapl.plot(xycoords_crvtest, styles=styles, labels=['{:.1f}'.format(features_test[i][0]) for i in range(len(features_test))])

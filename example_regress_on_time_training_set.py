@@ -1,26 +1,15 @@
 """
 Recurrent neural network model
-
-TODO
-experiment with lag (diff n)
-experiment with number of features (differences of 2, 4, 6 last observations; 
-  these would also have to include the stage value)
-ditto number neurons (> 3)
-ditto number of layers, I'd expect one needed per disc
-moving average gradient
-optimizing for the error metric (mean absolute error) instead of RMSE
-change timesteps http://machinelearningmastery.com/use-timesteps-lstm-networks-time-series-forecasting/
-update model http://machinelearningmastery.com/update-lstm-networks-training-time-series-forecasting/
 """
 
 import pandas as pd
-from matplotlib import pyplot as plt
 import numpy as np
 import sklearn.preprocessing as skprep
 import sklearn.metrics as skmet
 from sys import exit
 import keras.models as kem
 import keras.layers as kel
+import tinkerbell.app.plot as tbapl
 
 
 def lstm(features, labels, batch_size, num_epochs, num_neurons):
@@ -72,14 +61,14 @@ print(ydelta_normalized, ydelta_normalized.shape)
 
 
 fname_model = 'data_demo/model_lstm_exp.h5'
-if 1:
+if 0:
     model = lstm(yinput_normalized, ydelta_normalized, 1, 1000, 4)
     model.save(fname_model)
 else:
     model = kem.load_model(fname_model)
 
-yhat = [y[0]-3.0]
-for i in range(1, len(y)-1):
+yhat = [y[0]]
+for i in range(1, len(y)):
     # input is last value
     yprevious = yhat[-1]
     yinput = np.array([[yprevious]])
@@ -91,7 +80,5 @@ for i in range(1, len(y)-1):
     ydelta = ydelta[0, 0]
     yhat += [yprevious+ydelta]
 
-plt.plot(yhat, label='yhat')
-plt.plot(y, label='y')
-plt.legend()
-plt.show()
+xplot = np.arange(len(y))
+tbapl.plot([(xplot, y), (xplot, yhat)], styles=['p', 'l'], labels=['y', 'yhat'])

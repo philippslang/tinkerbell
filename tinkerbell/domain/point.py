@@ -1,5 +1,5 @@
 import json
-
+import numpy as np
 
 class Point:
     def __init__(self, x, y):
@@ -17,12 +17,15 @@ class Point:
         return self.coordinates[1]
 
 
-def point_coordinates(pts, idx=0):
+def point_coordinates(pts, idx=None):
     """
-    Returns concatenated list of all x (idx=0) or y (idx=1) coordinates
+    Returns concatenated list of all x (idx=0) or y (idx=1), or (x, y) (idx=None) coordinates
     of the provided points.
     """
-    return [pt[idx] for pt in pts]
+    if idx is not None:
+        return np.array([pt[idx] for pt in pts])
+    else:
+        return np.array([pt[0] for pt in pts]), np.array([pt[1] for pt in pts])
 
 def from_coordinates(xcoords, ycoords):
     """
@@ -41,6 +44,6 @@ def read_points(fname):
 
 
 def write_points(fname, pts):
-    data = {'coordinates':{'x': point_coordinates(pts, 0), 'y': point_coordinates(pts, 1) }}
+    data = {'coordinates':{'x': list(point_coordinates(pts, 0)), 'y': list(point_coordinates(pts, 1)) }}
     with open(fname, 'w') as f:
         json.dump(data, f, indent=4, sort_keys=True)

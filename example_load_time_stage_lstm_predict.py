@@ -24,49 +24,53 @@ import tinkerbell.app.rcparams as tbarc
 import tinkerbell.app.plot as tbapl
 import tinkerbell.domain.point as tbdpt
 import keras.models as kem
+import example_regress_on_time_stage_training_set
 
-y0 = tbarc.rcparams['shale.exp.y0_mean']
-d = 0.05
-xmax = 100.0
-num_points = 100
-xdisc = 45.0
-ixdisc = int(xdisc/(xmax/num_points))
+def do_the_thing():
+  y0 = tbarc.rcparams['shale.exp.y0_mean']
+  d = 0.05
+  xmax = 100.0
+  num_points = 100
+  xdisc = 45.0
+  ixdisc = int(xdisc/(xmax/num_points))
 
-np.random.seed(42)
-pts = tbamk.points_exponential_discontinuous_decline_noisy(y0, d, xmax, xdisc, num=num_points)
+  np.random.seed(42)
+  pts = tbamk.points_exponential_discontinuous_decline_noisy(y0, d, xmax, xdisc, num=num_points)
 
-ycomp_pts, xcomp_pts =  np.array(tbdpt.point_coordinates(pts, 1)), np.array(tbdpt.point_coordinates(pts, 0))
+  ycomp_pts, xcomp_pts =  np.array(tbdpt.point_coordinates(pts, 1)), np.array(tbdpt.point_coordinates(pts, 0))
 
-stagedelta = np.zeros_like(ycomp_pts)
-stagedelta[ixdisc] = 1.0
+  stagedelta = np.zeros_like(ycomp_pts)
+  stagedelta[ixdisc] = 1.0
 
-input = np.transpose(np.array([ycomp_pts, stagedelta])) 
-normalizer_input = skprep.MinMaxScaler(feature_range=(-1, 1))
-input_normalized = normalizer_input.fit_transform(input)
-print(input_normalized.shape)
+  input = np.transpose(np.array([ycomp_pts, stagedelta])) 
+  normalizer_input = skprep.MinMaxScaler(feature_range=(-1, 1))
+  input_normalized = normalizer_input.fit_transform(input)
+  print(input_normalized.shape)
 
-ydeltaoutput = np.diff(ycomp_pts)
-ydeltaoutput = ydeltaoutput.reshape(-1, 1)
-normalizer_ydeltaoutput = skprep.MinMaxScaler(feature_range=(-1, 1))
-normalizer_ydeltaoutput.fit(ydeltaoutput)
+  ydeltaoutput = np.diff(ycomp_pts)
+  ydeltaoutput = ydeltaoutput.reshape(-1, 1)
+  normalizer_ydeltaoutput = skprep.MinMaxScaler(feature_range=(-1, 1))
+  normalizer_ydeltaoutput.fit(ydeltaoutput)
 
-fname_model = 'data_demo/model_lstm_stages_exp.h5'
-model = kem.load_model(fname_model)
+  fname_model = 'data_demo/model_lstm_stages_exp.h5'
+  model = kem.load_model(fname_model)
 
-yhat = [ycomp_pts[0]]
-for i in range(input_normalized.shape[0]-1):
-    inputi_normalized = np.array([input_normalized[i,:]])
-    inputi_normalized = inputi_normalized.reshape(inputi_normalized.shape[0], 1, 
-      inputi_normalized.shape[1])
-    ydelta_normalized = model.predict(inputi_normalized, batch_size=1)
-    ydelta = normalizer_ydeltaoutput.inverse_transform(ydelta_normalized)
-    ydelta = ydelta[0, 0]
-    yhat += [yhat[-1]+ydelta]
+  yhat = [ycomp_pts[0]]
+  # didnt use diff (which shortens array by one), so we ommit prediction based on last input to not exceed reference solution length
+  for i in range(input_normalized.shape[0]-1): 
+      inputi_normalized = np.array([input_normalized[i,:]])
+      inputi_normalized = inputi_normalized.reshape(inputi_normalized.shape[0], 1, 
+        inputi_normalized.shape[1])
+      ydelta_normalized = model.predict(inputi_normalized, batch_size=1)
+      ydelta = normalizer_ydeltaoutput.inverse_transform(ydelta_normalized)
+      ydelta = ydelta[0, 0]
+      yhat += [yhat[-1]+ydelta]
 
-xplot = np.arange(len(ycomp_pts))
-print(xplot.shape)
-print(len(yhat))
-print(len(ycomp_pts))
-tbapl.plot([(xplot, ycomp_pts), (xplot, yhat)], styles=['p', 'l'], labels=['y', 'yhat'])
+  xplot = np.arange(len(ycomp_pts))
+  tbapl.plot([(xplot, ycomp_pts), (xplot, yhat)], styles=['p', 'l'], labels=['yblind', 'yhat'])
+
+if __name__ == '__main__':
+  example_regress_on_time_stage_training_set.do_the_thing(True, 1500, 3)
+  do_the_thing()
 
 

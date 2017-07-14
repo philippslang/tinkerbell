@@ -13,4 +13,6 @@ k = 2
 t = tbamk.knots_internal_four_heavy_right(xdisc, xmax, dx)
 crv = tbdmk.curve_lsq_fixed_knots(pts, t, k)
 
-tbapl.plot_points_curves([(pts, crv)])
+xcoordscrv, ycoordscrv = crv.xycoordinates()
+xcoordspts, ycoordspts = tbdpt.point_coordinates(pts) 
+tbapl.plot([(xcoordscrv, ycoordscrv), (xcoordspts, ycoordspts)], ['l', 'p'])
