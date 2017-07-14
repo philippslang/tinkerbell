@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import logging as log
 
 plt.style.use('ggplot')
 
@@ -53,4 +54,34 @@ def plot_points_curves(pointscurvessiterable):
     for points, curve in pointscurvessiterable:
         render_curve(ax, curve)
         render_points(ax, points)
+    plt.show()
+
+
+STYLEFALLBACK = {'linestyle': 'solid', 'linewidth': 2, 'alpha': 0.7}
+appstyletomplstyle = {'p': {'marker': 'x', 'linestyle': 'None'}, 'l': STYLEFALLBACK}
+
+
+def plot(xyarraytuplesiterable, styles=[], labels=[]):
+    if not styles:
+        styles = ['p'] * len(xyarraytuplesiterable)
+    legend = True
+    if not labels:
+        legend = False
+        labels = [None] * len(xyarraytuplesiterable)
+    fig = plt.figure() 
+    ax = fig.add_subplot(111)  
+    i = 0  
+    for (x, y), style, label in zip(xyarraytuplesiterable, styles, labels):
+        try:
+            plotargs = appstyletomplstyle[style]
+        except:            
+            series = label
+            if not series:
+                series = str(i)
+            log.warn('Plot style \'{0}\' for series \'{1}\' not recognized, using fallback.'.format(style, label))
+            plotargs = STYLEFALLBACK       
+        ax.plot(x, y, **plotargs, label=label)
+        i = i+1
+    if legend:
+        plt.legend()
     plt.show()

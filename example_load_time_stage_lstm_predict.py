@@ -54,7 +54,7 @@ fname_model = 'data_demo/model_lstm_stages_exp.h5'
 model = kem.load_model(fname_model)
 
 yhat = [ycomp_pts[0]]
-for i in range(input_normalized.shape[0]):
+for i in range(input_normalized.shape[0]-1):
     inputi_normalized = np.array([input_normalized[i,:]])
     inputi_normalized = inputi_normalized.reshape(inputi_normalized.shape[0], 1, 
       inputi_normalized.shape[1])
@@ -63,9 +63,10 @@ for i in range(input_normalized.shape[0]):
     ydelta = ydelta[0, 0]
     yhat += [yhat[-1]+ydelta]
 
-plt.plot(ycomp_pts, label='y')
-plt.plot(yhat, label='yhat')
-plt.legend()
-plt.title('forcast on new xdisc')
-plt.show()
+xplot = np.arange(len(ycomp_pts))
+print(xplot.shape)
+print(len(yhat))
+print(len(ycomp_pts))
+tbapl.plot([(xplot, ycomp_pts), (xplot, yhat)], styles=['p', 'l'], labels=['y', 'yhat'])
+
 

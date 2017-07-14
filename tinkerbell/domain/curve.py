@@ -46,6 +46,12 @@ class Curve:
         """
         return flat_header(len(self.t), len(self.c))
 
+    def xycoordinates(self, num_xvalues=200):
+        minmax = np.min(self.t), np.max(self.t)
+        xcoords = np.linspace(*minmax, num_xvalues)
+        ycoords = self(xcoords)
+        return xcoords, ycoords
+
 
 def flat_header_coefficients(num_cofficients):
     return ['c{:0>3d}'.format(i) for i in range(num_cofficients)]
