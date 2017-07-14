@@ -19,11 +19,15 @@ import numpy as np
 import sklearn.preprocessing as skprep
 import sklearn.metrics as skmet
 from sys import exit
+import logging as log
 import keras.models as kem
 import keras.layers as kel
 import tinkerbell.app.plot as tbapl
+import pickle
 
 FNAME = 'data_demo/model_lstm_stages_exp.h5'
+FNAME_INORM = 'data_demo/inorm'
+FNAME_ONORM = 'data_demo/onorm'
 
 def lstm(features, labels, batch_size, num_epochs, num_neurons):
     print('NEURONS', num_neurons)
@@ -74,11 +78,13 @@ def do_the_thing(fit=True, num_epochs=500, num_neurons=4):
     input = np.transpose(np.array([yinput, stagedeltainput])) #yinput.reshape(-1, 1)
     normalizer_input = skprep.MinMaxScaler(feature_range=(-1, 1))
     input_normalized = normalizer_input.fit_transform(input)
+    pickle.dump(normalizer_input, open(FNAME_INORM, "wb"))
     print('INPUT NORM')
     print(input_normalized, input_normalized.shape)
     ydeltaoutput = ydeltaoutput.reshape(-1, 1)
-    normalizer_ydeltaoutput = skprep.MinMaxScaler(feature_range=(-1, 1))
+    normalizer_ydeltaoutput = skprep.MinMaxScaler(feature_range=(-1, 1))    
     ydelta_normalized = normalizer_ydeltaoutput.fit_transform(ydeltaoutput)
+    pickle.dump(normalizer_ydeltaoutput, open(FNAME_ONORM, "wb"))    
     print('YDELTAOUTPUT NORM')
     print(ydelta_normalized, ydelta_normalized.shape)
 
@@ -90,15 +96,17 @@ def do_the_thing(fit=True, num_epochs=500, num_neurons=4):
         model = kem.load_model(FNAME)
 
     yhat = [y[0]]
-    print(yhat)
     for i in range(1, len(y)):
         # input is last value
         yprevious = yhat[-1]
         stagedeltacurrent = stagedeltainput[i-1]
         yinput = np.array([[yprevious,stagedeltacurrent]])
+        log.info(yinput)
         yinput_normalized = normalizer_input.transform(yinput)
         yinput_normalized = yinput_normalized.reshape(yinput_normalized.shape[0], 1, 
         yinput_normalized.shape[1])
+        log.info(yinput_normalized)
+        log.info('-----------------------------')
         ydelta_normalized = model.predict(yinput_normalized, batch_size=1)
         ydeltaoutput = normalizer_ydeltaoutput.inverse_transform(ydelta_normalized)
         ydeltaoutput = ydeltaoutput[0, 0]

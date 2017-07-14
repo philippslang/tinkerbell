@@ -26,55 +26,63 @@ import tinkerbell.domain.point as tbdpt
 import keras.models as kem
 import example_regress_on_time_stage_training_set
 import example_generate_time_stage_training_set
-
+import logging as log
+import pickle
 
 def do_the_thing():
   y0 = tbarc.rcparams['shale.exp.y0_mean']
   d = example_generate_time_stage_training_set.D
   xmax = example_generate_time_stage_training_set.XMAX
   num_points = example_generate_time_stage_training_set.NUM_POINTS
-  xdisc = example_generate_time_stage_training_set.XDISC
+  xdisc = example_generate_time_stage_training_set.XDISC + xmax*0.15
 
   np.random.seed(42)
   pts, ixdisc = tbamk.points_exponential_discontinuous_declinelinear_noisy(y0, d, xmax, xdisc, num=num_points)
 
-  ycomp_pts, xcomp_pts =  tbdpt.point_coordinates(pts)
+  xcomp_pts, ycomp_pts =  tbdpt.point_coordinates(pts)
 
-  tbapl.plot([(xcomp_pts, ycomp_pts)])
+  #tbapl.plot([(xcomp_pts, ycomp_pts)])
+  #exit()
 
   stagedelta = np.zeros_like(ycomp_pts)
   stagedelta[ixdisc] = 1.0
 
   input = np.transpose(np.array([ycomp_pts, stagedelta])) 
-  normalizer_input = skprep.MinMaxScaler(feature_range=(-1, 1))
-  input_normalized = normalizer_input.fit_transform(input)
-  print(input_normalized.shape)
+  normalizer_input = pickle.load(open(example_regress_on_time_stage_training_set.FNAME_INORM, "rb"))
+  input_normalized = normalizer_input.transform(input)
 
-  ydeltaoutput = np.diff(ycomp_pts)
-  ydeltaoutput = ydeltaoutput.reshape(-1, 1)
-  normalizer_ydeltaoutput = skprep.MinMaxScaler(feature_range=(-1, 1))
-  normalizer_ydeltaoutput.fit(ydeltaoutput)
+  normalizer_ydeltaoutput = pickle.load(open(example_regress_on_time_stage_training_set.FNAME_ONORM, "rb"))
 
   fname_model = example_regress_on_time_stage_training_set.FNAME 
   model = kem.load_model(fname_model)
 
   yhat = [ycomp_pts[0]]
+  log.info('-----------------------------')
+  log.info('-----------------------------')
+  log.info('-----------------------------')
   # didnt use diff (which shortens array by one), so we ommit prediction based on last input to not exceed reference solution length
-  for i in range(input_normalized.shape[0]-1): 
-      inputi_normalized = np.array([input_normalized[i,:]])
+  for i in range(1, len(ycomp_pts)): 
+      yprevious = yhat[-1]
+      stagedeltacurrent = stagedelta[i]
+      inputi = np.array([[yprevious, stagedeltacurrent]])
+      log.info(inputi)      
+      inputi_normalized = normalizer_input.transform(inputi)
       inputi_normalized = inputi_normalized.reshape(inputi_normalized.shape[0], 1, 
         inputi_normalized.shape[1])
+      log.info(inputi_normalized)
+      log.info('-----------------------------')
       ydelta_normalized = model.predict(inputi_normalized, batch_size=1)
       ydelta = normalizer_ydeltaoutput.inverse_transform(ydelta_normalized)
       ydelta = ydelta[0, 0]
       yhat += [yhat[-1]+ydelta]
 
-  #tbapl.plot([(xplot, ycomp_pts), (xplot, yhat)], styles=['p', 'l'], labels=['yblind', 'yhat'])
+  tbapl.plot([(xcomp_pts, ycomp_pts), (xcomp_pts, yhat)], styles=['p', 'l'], labels=['yblind', 'yhat'])
   
 
 
 if __name__ == '__main__':
-  #example_regress_on_time_stage_training_set.do_the_thing(True, 1000, 4)
+  log.basicConfig(filename='debug00.log', level=log.DEBUG)
+  example_regress_on_time_stage_training_set.do_the_thing(False, 1500, 3)
   do_the_thing()
 
 
