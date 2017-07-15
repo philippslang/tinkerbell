@@ -41,9 +41,6 @@ def do_the_thing():
 
   xcomp_pts, ycomp_pts =  tbdpt.point_coordinates(pts)
 
-  #tbapl.plot([(xcomp_pts, ycomp_pts)])
-  #exit()
-
   stagedelta = np.zeros_like(ycomp_pts)
   stagedelta[ixdisc] = 1.0
 
@@ -57,9 +54,6 @@ def do_the_thing():
   model = kem.load_model(fname_model)
 
   yhat = [ycomp_pts[0]]
-  log.info('-----------------------------')
-  log.info('-----------------------------')
-  log.info('-----------------------------')
   # didnt use diff (which shortens array by one), so we ommit prediction based on last input to not exceed reference solution length
   for i in range(1, len(ycomp_pts)): 
       yprevious = yhat[-1]
@@ -82,7 +76,10 @@ def do_the_thing():
 
 if __name__ == '__main__':
   #log.basicConfig(filename='debug00.log', level=log.DEBUG)
-  example_regress_on_time_stage_training_set.do_the_thing(False, 1500, 3)
+  #example_regress_on_time_stage_training_set.do_the_thing(False, 1500, 3)
+  log.info('-----------------------------')
+  log.info('-----------------------------')
+  log.info('-----------------------------')
   do_the_thing()
 
 
