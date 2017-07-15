@@ -30,7 +30,7 @@ import logging as log
 import pickle
 
 def do_the_thing():
-  y0 = tbarc.rcparams['shale.exp.y0_mean']
+  y0 = tbarc.rcparams['shale.exp.y0_mean']*0.9
   d = example_generate_time_stage_training_set.D
   xmax = example_generate_time_stage_training_set.XMAX
   num_points = example_generate_time_stage_training_set.NUM_POINTS
@@ -81,7 +81,7 @@ def do_the_thing():
 
 
 if __name__ == '__main__':
-  log.basicConfig(filename='debug00.log', level=log.DEBUG)
+  #log.basicConfig(filename='debug00.log', level=log.DEBUG)
   example_regress_on_time_stage_training_set.do_the_thing(False, 1500, 3)
   do_the_thing()
 

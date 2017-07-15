@@ -100,7 +100,7 @@ def do_the_thing(fit=True, num_epochs=500, num_neurons=4):
         # input is last value
         yprevious = yhat[-1]
         stagedeltacurrent = stagedeltainput[i-1]
-        yinput = np.array([[yprevious,stagedeltacurrent]])
+        yinput = np.array([[yprevious, stagedeltacurrent]])
         log.info(yinput)
         yinput_normalized = normalizer_input.transform(yinput)
         yinput_normalized = yinput_normalized.reshape(yinput_normalized.shape[0], 1, 
