@@ -10,8 +10,8 @@ ditto number neurons (> 3)
 ditto number of layers, I'd expect one needed per disc
 moving average gradient
 optimizing for the error metric (mean absolute error) instead of RMSE
-change timesteps http://machinelearningmastery.com/use-timesteps-lstm-networks-time-series-forecasting/
-update model http://machinelearningmastery.com/update-lstm-networks-training-time-series-forecasting/
+change timesteps 
+update model 
 """
 
 import pandas as pd
@@ -20,31 +20,35 @@ import sklearn.preprocessing as skprep
 import sklearn.metrics as skmet
 from sys import exit
 import logging as log
-import keras.models as kem
-import keras.layers as kel
 import tinkerbell.app.plot as tbapl
 import pickle
 
 FNAME = 'data_demo/model_lstm_stages_exp.h5'
 FNAME_INORM = 'data_demo/inorm'
 FNAME_ONORM = 'data_demo/onorm'
+FNAME_TRAIN = 'data_demo/time_stage_lstm_train.npy'
 
-def lstm(features, labels, batch_size, num_epochs, num_neurons):
-    print('NEURONS', num_neurons)
-    X, y = features, labels[:, 0]
-    X = X.reshape(X.shape[0], 1, X.shape[1])
-    model = kem.Sequential()
-    model.add(kel.LSTM(num_neurons, batch_input_shape=(batch_size, X.shape[1], X.shape[2]), stateful=True))
-    model.add(kel.Dense(1))
-    model.compile(loss='mean_squared_error', optimizer='adam')
-    for i in range(num_epochs):
-        print('EPOCH', i, '\\', num_epochs)
-        model.fit(X, y, epochs=1, batch_size=batch_size, verbose=0, shuffle=False)
-        model.reset_states()
-    return model
+
 
 
 def do_the_thing(fit=True, num_epochs=500, num_neurons=4):
+    import keras.models as kem
+    import keras.layers as kel
+
+    def lstm(features, labels, batch_size, num_epochs, num_neurons):
+        print('NEURONS', num_neurons)
+        X, y = features, labels[:, 0]
+        X = X.reshape(X.shape[0], 1, X.shape[1])
+        model = kem.Sequential()
+        model.add(kel.LSTM(num_neurons, batch_input_shape=(batch_size, X.shape[1], X.shape[2]), stateful=True))
+        model.add(kel.Dense(1))
+        model.compile(loss='mean_squared_error', optimizer='adam')
+        for i in range(num_epochs):
+            print('EPOCH', i, '\\', num_epochs)
+            model.fit(X, y, epochs=1, batch_size=batch_size, verbose=0, shuffle=False)
+            model.reset_states()
+        return model
+
     series = pd.read_csv('data_demo/shale_time_stage_exp.csv')
     print('SERIES')
     print(series.head())
@@ -112,7 +116,9 @@ def do_the_thing(fit=True, num_epochs=500, num_neurons=4):
         ydeltaoutput = ydeltaoutput[0, 0]
         yhat += [yprevious+ydeltaoutput]
 
+    
     xplot = series['x'].values
+    np.save(FNAME_TRAIN, np.array([xplot, y]))
     tbapl.plot([(xplot, y), (xplot, yhat)], styles=['p', 'l'], labels=['ytrain', 'yhat'])
 
 if __name__ == '__main__':

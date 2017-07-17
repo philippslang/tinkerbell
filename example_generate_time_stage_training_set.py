@@ -7,11 +7,12 @@ import numpy as np
 
 XMAX = 90.0
 XDISC = 40.0
+Y0 = tbarc.rcparams['shale.exp.y0_mean']
 NUM_POINTS = 75
 D = 0.05
 
 if __name__ == '__main__':
-    y0 = tbarc.rcparams['shale.exp.y0_mean']
+    y0 = Y0
     d = D
     xmax = XMAX
     num_points = NUM_POINTS
