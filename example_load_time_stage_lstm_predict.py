@@ -7,6 +7,7 @@ from sys import exit
 import tinkerbell.app.make as tbamk
 import tinkerbell.app.rcparams as tbarc
 import tinkerbell.app.plot as tbapl
+import tinkerbell.app.model as tbamd
 import tinkerbell.domain.point as tbdpt
 import example_regress_on_time_stage_training_set
 import example_generate_time_stage_training_set
@@ -21,8 +22,6 @@ Y0 = tbarc.rcparams['shale.exp.y0_mean']*0.7
 XDISC = example_generate_time_stage_training_set.XDISC + XMAX*0.15
 
 def do_the_thing():
-  import keras.models as kem
-
   y0 = Y0
   d = example_generate_time_stage_training_set.D
   xmax = XMAX
@@ -44,7 +43,7 @@ def do_the_thing():
   normalizer_ydeltaoutput = pickle.load(open(example_regress_on_time_stage_training_set.FNAME_ONORM, "rb"))
 
   fname_model = example_regress_on_time_stage_training_set.FNAME 
-  model = kem.load_model(fname_model)
+  model = tbamd.load(fname_model)
 
   yhat = [ycomp_pts[0]]
   # didnt use diff (which shortens array by one), so we ommit prediction based on last input to not exceed reference solution length
@@ -52,19 +51,19 @@ def do_the_thing():
       yprevious = yhat[-1]
       stagedeltacurrent = stagedelta[i]
       inputi = np.array([[yprevious, stagedeltacurrent]])
-      log.info(inputi)      
+      #log.info(inputi)      
       inputi_normalized = normalizer_input.transform(inputi)
       inputi_normalized = inputi_normalized.reshape(inputi_normalized.shape[0], 1, 
         inputi_normalized.shape[1])
-      log.info(inputi_normalized)
-      log.info('-----------------------------')
+      #log.info(inputi_normalized)
+      #log.info('-----------------------------')
       ydelta_normalized = model.predict(inputi_normalized, batch_size=1)
       ydelta = normalizer_ydeltaoutput.inverse_transform(ydelta_normalized)
       ydelta = ydelta[0, 0]
       yhat += [yhat[-1]+ydelta]
 
   input_xy = ((0, y0), (xdisc, 0))
-  print(input_xy)
+  #print(input_xy)
   np.save(FNAME_BLIND, np.array([xcomp_pts, ycomp_pts]))
   np.save(FNAME_PRED, np.array([xcomp_pts, yhat]))
   tbapl.plot([(xcomp_pts, ycomp_pts), (xcomp_pts, yhat)], styles=['p', 'l'], labels=['yblind', 'yhat'])
@@ -73,10 +72,7 @@ def do_the_thing():
 
 if __name__ == '__main__':
   #log.basicConfig(filename='debug00.log', level=log.DEBUG)
-  #example_regress_on_time_stage_training_set.do_the_thing(False, 1500, 3)
-  log.info('-----------------------------')
-  log.info('-----------------------------')
-  log.info('-----------------------------')
+  example_regress_on_time_stage_training_set.do_the_thing(True, 1500, 3)
   do_the_thing()
 
 
