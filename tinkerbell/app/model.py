@@ -1,7 +1,39 @@
 import logging as log
 import keras.models as kem
 import keras.layers as kel
+import numpy as np
 
+
+class Features:
+    def __init__(self, production, stage):
+        self.production = np.copy(production)
+        self.stage = np.copy(stage)
+        self.eval_deltas()
+
+    def eval_deltas(self):
+        self.dproduction_dt = np.diff(self.production)
+        self.dstage_dstep = np.diff(self.stage)
+
+
+class ProgressBar:
+    def __init__(self, num_iterations):
+        self.fill = '█'
+        self.length = 50
+        self.decimals = 1
+        self.num_iterations = num_iterations
+
+    def __enter__(self):
+        self.update()
+        return self
+
+    def __exit__(self, *args):
+        print()
+
+    def update(self, iteration=0):
+        fraction = ("{0:." + str(self.decimals) + "f}").format(100 * (iteration / float(self.num_iterations)))
+        num_filled = int(self.length * iteration // self.num_iterations)
+        bar = self.fill * num_filled + '-' * (self.length - num_filled)
+        print('\rTraining |%s| %s%% complete.' % (bar, fraction), end='\r')
 
 def printProgressBar (iteration, total, prefix='Training:', suffix='complete', decimals=1, length=50, fill='█', history=None):
     """
@@ -29,11 +61,13 @@ def printProgressBar (iteration, total, prefix='Training:', suffix='complete', d
 
 def train(model, X, y, num_epochs, batch_size):
     print('')
-    printProgressBar(0, num_epochs)
-    for i in range(num_epochs):
-        history = model.fit(X, y, epochs=1, batch_size=batch_size, shuffle=False, verbose=0)
-        model.reset_states()
-        printProgressBar(i+1, num_epochs, history=history)
+    #printProgressBar(0, num_epochs)
+    with ProgressBar(num_epochs) as progress_bar:
+        for i in range(num_epochs):
+            history = model.fit(X, y, epochs=1, batch_size=batch_size, shuffle=False, verbose=0)
+            model.reset_states()
+            progress_bar.update(i)
+            #printProgressBar(i+1, num_epochs, history=history)
 
 
 def lstm(features, labels, batch_size, num_epochs, num_neurons):

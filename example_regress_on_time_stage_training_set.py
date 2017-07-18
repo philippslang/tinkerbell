@@ -35,39 +35,43 @@ def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):
     #print('SERIES')
     #print(series.head())
 
+    y = series['y'].values
+    stage = series['stage'].values
+    features = tbamd.Features(y, stage)
+
     # we predict from previous y value, so features = labels with
     # a shift. first a 1D array
-    y = series['y'].values
+    
     #print('Y')
     #print(y, y.shape)
 
-    stage =  series['stage'].values
+    #stage =  series['stage'].values
     #print('STAGE')
     #print(stage, stage.shape)
 
     # stationary features (delta y), essentially start at time = 1, 
     # so one short of all labels
-    ydeltaoutput = np.diff(y)
+    #ydeltaoutput = np.diff(y)
     #print('YDELTAOUTPUT')
     #print(ydeltaoutput, ydeltaoutput.shape)
 
-    stagedeltainput = np.diff(stage)
+    #stagedeltainput = np.diff(stage)
     #print('STAGEDELTA')
     #print(stagedeltainput, stagedeltainput.shape)
 
     # bring the labels to shape
-    yinput = y[:-1]
+    yinput = features.production[:-1]
     #print('YINPUT')
     #print(yinput, yinput.shape)
 
     # normalize both
-    input = np.transpose(np.array([yinput, stagedeltainput])) #yinput.reshape(-1, 1)
+    input = np.transpose(np.array([yinput, features.dstage_dstep])) #yinput.reshape(-1, 1)
     normalizer_input = skprep.MinMaxScaler(feature_range=(-1, 1))
     input_normalized = normalizer_input.fit_transform(input)
     pickle.dump(normalizer_input, open(FNAME_INORM, "wb"))
     #print('INPUT NORM')
     #print(input_normalized, input_normalized.shape)
-    ydeltaoutput = ydeltaoutput.reshape(-1, 1)
+    ydeltaoutput = features.dproduction_dt.reshape(-1, 1)
     normalizer_ydeltaoutput = skprep.MinMaxScaler(feature_range=(-1, 1))    
     ydelta_normalized = normalizer_ydeltaoutput.fit_transform(ydeltaoutput)
     pickle.dump(normalizer_ydeltaoutput, open(FNAME_ONORM, "wb"))    
@@ -85,7 +89,7 @@ def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):
     for i in range(1, len(y)):
         # input is last value
         yprevious = yhat[-1]
-        stagedeltacurrent = stagedeltainput[i-1]
+        stagedeltacurrent = features.dstage_dstep[i-1]
         yinput = np.array([[yprevious, stagedeltacurrent]])
         yinput_normalized = normalizer_input.transform(yinput)
         yinput_normalized = yinput_normalized.reshape(yinput_normalized.shape[0], 1, 

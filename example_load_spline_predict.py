@@ -47,6 +47,5 @@ for xdiscc in features_test:
     labels.append('yblind {:.1f}'.format(xdisc))
     
 
-print(len(xycoords_crvtest))
 tbapl.plot(xycoords_crvtest, styles=styles, labels=labels)
 
