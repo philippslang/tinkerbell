@@ -25,59 +25,29 @@ import tinkerbell.app.model as tbamd
 import pickle
 
 FNAME = 'data_demo/model_lstm_stages_exp.h5'
-FNAME_INORM = 'data_demo/inorm'
-FNAME_ONORM = 'data_demo/onorm'
+FNAME_NORM = 'data_demo/norm'
 FNAME_TRAIN = 'data_demo/time_stage_lstm_train.npy'
 
 
 def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):  
     series = pd.read_csv('data_demo/shale_time_stage_exp.csv')
-    #print('SERIES')
     #print(series.head())
 
     y = series['y'].values
     stage = series['stage'].values
     features = tbamd.Features(y, stage)
-
-    # we predict from previous y value, so features = labels with
-    # a shift. first a 1D array
-    
-    #print('Y')
-    #print(y, y.shape)
-
-    #stage =  series['stage'].values
-    #print('STAGE')
-    #print(stage, stage.shape)
-
-    # stationary features (delta y), essentially start at time = 1, 
-    # so one short of all labels
-    #ydeltaoutput = np.diff(y)
-    #print('YDELTAOUTPUT')
-    #print(ydeltaoutput, ydeltaoutput.shape)
-
-    #stagedeltainput = np.diff(stage)
-    #print('STAGEDELTA')
-    #print(stagedeltainput, stagedeltainput.shape)
+    targets = tbamd.Targets(y)
 
     # bring the labels to shape
     yinput = features.production[:-1]
-    #print('YINPUT')
-    #print(yinput, yinput.shape)
 
     # normalize both
-    input = np.transpose(np.array([yinput, features.dstage_dstep])) #yinput.reshape(-1, 1)
-    normalizer_input = skprep.MinMaxScaler(feature_range=(-1, 1))
-    input_normalized = normalizer_input.fit_transform(input)
-    pickle.dump(normalizer_input, open(FNAME_INORM, "wb"))
-    #print('INPUT NORM')
-    #print(input_normalized, input_normalized.shape)
-    ydeltaoutput = features.dproduction_dt.reshape(-1, 1)
-    normalizer_ydeltaoutput = skprep.MinMaxScaler(feature_range=(-1, 1))    
-    ydelta_normalized = normalizer_ydeltaoutput.fit_transform(ydeltaoutput)
-    pickle.dump(normalizer_ydeltaoutput, open(FNAME_ONORM, "wb"))    
-    #print('YDELTAOUTPUT NORM')
-    #print(ydelta_normalized, ydelta_normalized.shape)
-
+    input = features.matrix() 
+    ydeltaoutput = targets.matrix()
+    normalizer = tbamd.Normalizer.fit(input, ydeltaoutput) 
+    normalizer.save(FNAME_NORM)
+    input_normalized = normalizer.normalize_features(input)  
+    ydelta_normalized = normalizer.normalize_targets(ydeltaoutput)
 
     if fit:
         model = tbamd.lstm(input_normalized, ydelta_normalized, 1, num_epochs, num_neurons)
@@ -91,11 +61,11 @@ def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):
         yprevious = yhat[-1]
         stagedeltacurrent = features.dstage_dstep[i-1]
         yinput = np.array([[yprevious, stagedeltacurrent]])
-        yinput_normalized = normalizer_input.transform(yinput)
+        yinput_normalized = normalizer.normalize_features(yinput)
         yinput_normalized = yinput_normalized.reshape(yinput_normalized.shape[0], 1, 
         yinput_normalized.shape[1])
         ydelta_normalized = model.predict(yinput_normalized, batch_size=1)
-        ydeltaoutput = normalizer_ydeltaoutput.inverse_transform(ydelta_normalized)
+        ydeltaoutput = normalizer.denormalize_targets(ydelta_normalized)
         ydeltaoutput = ydeltaoutput[0, 0]
         yhat += [yprevious+ydeltaoutput]
 
@@ -105,4 +75,4 @@ def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):
     tbapl.plot([(xplot, y), (xplot, yhat)], styles=['p', 'l'], labels=['ytrain', 'yhat'])
 
 if __name__ == '__main__':
-  do_the_thing()
+  do_the_thing(True, 99, 3)
