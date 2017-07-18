@@ -8,7 +8,7 @@ import sklearn.preprocessing as skprep
 
 def makes_deep_copy(fct):
     def ret_fct(*args, **kwargs):
-        print('Deep copy of potentially large array in \'{}\'()'.format(fct.__name__))
+        print('Deep copy of potentially large buffer in \'{}\'()'.format(fct.__name__))
         return fct(*args, **kwargs)
     ret_fct.f = fct.__name__
     ret_fct.__doc__ = fct.__doc__
@@ -17,7 +17,6 @@ def makes_deep_copy(fct):
 
 
 class Features:
-    @makes_deep_copy
     def __init__(self, production, stage):
         self.production = np.copy(production)
         self.stage = np.copy(stage)
@@ -26,7 +25,6 @@ class Features:
     def eval_deltas(self):
         self.dstage_dstep = np.diff(self.stage)
 
-    @makes_deep_copy
     def matrix(self):
         # here we must account for that we lost the top row
         # when taking the delta from the production stage
@@ -36,7 +34,6 @@ class Features:
 
 
 class Targets:
-    @makes_deep_copy
     def __init__(self, production):
         self.production = np.copy(production)
         self.eval_deltas()
@@ -44,7 +41,6 @@ class Targets:
     def eval_deltas(self):
         self.dproduction_dt = np.diff(self.production)
 
-    @makes_deep_copy
     def matrix(self):
         return self.dproduction_dt.reshape(-1, 1)
 
@@ -54,23 +50,25 @@ class Normalizer:
         self.features = skprep.MinMaxScaler(feature_range=(-1, 1))
         self.targets = skprep.MinMaxScaler(feature_range=(-1, 1))
 
-    def normalize_features(self, feature_matrix):
-        return self.features.transform(feature_matrix)
+    def normalize_features(self, features):
+        return self.features.transform(features.matrix())
 
     def denormalize_features(self, feature_matrix):
         return self.features.inverse_transform(feature_matrix)
 
-    def normalize_targets(self, target_matrix):
-        return self.targets.transform(target_matrix)
+    @makes_deep_copy
+    def normalize_targets(self, targets):
+        return self.targets.transform(targets.matrix())
 
     def denormalize_targets(self, target_matrix):
         return self.targets.inverse_transform(target_matrix)
 
     @staticmethod
-    def fit(feature_matrix, targets_matrix):
+    @makes_deep_copy    
+    def fit(features, targets):
         normalizer = Normalizer()
-        normalizer.features.fit(feature_matrix)
-        normalizer.targets.fit(targets_matrix)
+        normalizer.features.fit(features.matrix())
+        normalizer.targets.fit(targets.matrix())
         return normalizer
 
     def save(self, fname):

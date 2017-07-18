@@ -34,20 +34,16 @@ def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):
     #print(series.head())
 
     y = series['y'].values
+    # stage is misleading it's stage delta
     stage = series['stage'].values
     features = tbamd.Features(y, stage)
     targets = tbamd.Targets(y)
 
-    # bring the labels to shape
-    #yinput = features.production[:-1]
-
     # normalize both
-    input = features.matrix() 
-    ydeltaoutput = targets.matrix()
-    normalizer = tbamd.Normalizer.fit(input, ydeltaoutput) 
+    normalizer = tbamd.Normalizer.fit(features, targets) 
     normalizer.save(FNAME_NORM)
-    input_normalized = normalizer.normalize_features(input)  
-    ydelta_normalized = normalizer.normalize_targets(ydeltaoutput)
+    input_normalized = normalizer.normalize_features(features)  
+    ydelta_normalized = normalizer.normalize_targets(targets)
 
     if fit:
         model = tbamd.lstm(input_normalized, ydelta_normalized, 1, num_epochs, num_neurons)
@@ -56,23 +52,24 @@ def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):
         model = tbamd.load(FNAME)
 
     yhat = [y[0]]
-    for i in range(1, len(y)):
+    for i in range(1, len(y)-1):
         # input is last value
-        yprevious = yhat[-1]
-        stagedeltacurrent = features.dstage_dstep[i-1]
-        yinput = np.array([[yprevious, stagedeltacurrent]])
-        yinput_normalized = normalizer.normalize_features(yinput)
-        yinput_normalized = yinput_normalized.reshape(yinput_normalized.shape[0], 1, 
-        yinput_normalized.shape[1])
-        ydelta_normalized = model.predict(yinput_normalized, batch_size=1)
-        ydeltaoutput = normalizer.denormalize_targets(ydelta_normalized)
-        ydeltaoutput = ydeltaoutput[0, 0]
-        yhat += [yprevious+ydeltaoutput]
+        ylasttwo = y[i-1:i+1]
+        stagelasttwo = stage[i-1:i+1]
+        features_predict = tbamd.Features(ylasttwo, stagelasttwo)
+        features_predict_normalized = normalizer.normalize_features(features_predict)
+        features_predict_normalized = features_predict_normalized.reshape(features_predict_normalized.shape[0], 
+          1, features_predict_normalized.shape[1])
+        target_predicted_normalized = model.predict(features_predict_normalized, batch_size=1)
+        target_predicted = normalizer.denormalize_targets(target_predicted_normalized)
+        target_predicted = target_predicted[0, 0]
+        yhat += [yhat[-1]+target_predicted]
 
     
-    xplot = series['x'].values
+    xplot = series['x'].values[:-1]
+    yref = y[:-1]
     np.save(FNAME_TRAIN, np.array([xplot, y]))
-    tbapl.plot([(xplot, y), (xplot, yhat)], styles=['p', 'l'], labels=['ytrain', 'yhat'])
+    tbapl.plot([(xplot, yref), (xplot, yhat)], styles=['p', 'l'], labels=['ytrain', 'yhat'])
 
 if __name__ == '__main__':
-  do_the_thing(True, 99, 3)
+  do_the_thing(True, 1500, 3)

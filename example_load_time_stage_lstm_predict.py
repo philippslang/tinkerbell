@@ -36,43 +36,42 @@ def do_the_thing():
   stagedelta = np.zeros_like(ycomp_pts)
   stagedelta[ixdisc] = 1.0
 
-  input = np.transpose(np.array([ycomp_pts, stagedelta])) 
-  normalizer_input = pickle.load(open(example_regress_on_time_stage_training_set.FNAME_INORM, "rb"))
-  input_normalized = normalizer_input.transform(input)
+  features = tbamd.Features(ycomp_pts, stagedelta)
+  targets = tbamd.Targets(ycomp_pts)
 
-  normalizer_ydeltaoutput = pickle.load(open(example_regress_on_time_stage_training_set.FNAME_ONORM, "rb"))
+  fname_normalizer = example_regress_on_time_stage_training_set.FNAME_NORM
+  normalizer = tbamd.Normalizer.load(fname_normalizer)
 
   fname_model = example_regress_on_time_stage_training_set.FNAME 
   model = tbamd.load(fname_model)
 
   yhat = [ycomp_pts[0]]
-  # didnt use diff (which shortens array by one), so we ommit prediction based on last input to not exceed reference solution length
-  for i in range(1, len(ycomp_pts)): 
-      yprevious = yhat[-1]
-      stagedeltacurrent = stagedelta[i]
-      inputi = np.array([[yprevious, stagedeltacurrent]])
-      #log.info(inputi)      
-      inputi_normalized = normalizer_input.transform(inputi)
-      inputi_normalized = inputi_normalized.reshape(inputi_normalized.shape[0], 1, 
-        inputi_normalized.shape[1])
-      #log.info(inputi_normalized)
-      #log.info('-----------------------------')
-      ydelta_normalized = model.predict(inputi_normalized, batch_size=1)
-      ydelta = normalizer_ydeltaoutput.inverse_transform(ydelta_normalized)
-      ydelta = ydelta[0, 0]
-      yhat += [yhat[-1]+ydelta]
+  for i in range(1, len(ycomp_pts)-1): 
+    # input is last value
+    ylasttwo = ycomp_pts[i-1:i+1]
+    stagelasttwo = stagedelta[i-1:i+1]
+    features_predict = tbamd.Features(ylasttwo, stagelasttwo)
+    features_predict_normalized = normalizer.normalize_features(features_predict)
+    features_predict_normalized = features_predict_normalized.reshape(features_predict_normalized.shape[0], 
+      1, features_predict_normalized.shape[1])
+    target_predicted_normalized = model.predict(features_predict_normalized, batch_size=1)
+    target_predicted = normalizer.denormalize_targets(target_predicted_normalized)
+    target_predicted = target_predicted[0, 0]
+    yhat += [yhat[-1]+target_predicted]
 
   input_xy = ((0, y0), (xdisc, 0))
   #print(input_xy)
-  np.save(FNAME_BLIND, np.array([xcomp_pts, ycomp_pts]))
-  np.save(FNAME_PRED, np.array([xcomp_pts, yhat]))
-  tbapl.plot([(xcomp_pts, ycomp_pts), (xcomp_pts, yhat)], styles=['p', 'l'], labels=['yblind', 'yhat'])
+  xplot = xcomp_pts[:-1]
+  yref = ycomp_pts[:-1]
+  np.save(FNAME_BLIND, np.array([xplot, yref]))
+  np.save(FNAME_PRED, np.array([xplot, yhat]))
+  tbapl.plot([(xplot, yref), (xplot, yhat)], styles=['p', 'l'], labels=['yblind', 'yhat'])
   
 
 
 if __name__ == '__main__':
   #log.basicConfig(filename='debug00.log', level=log.DEBUG)
-  example_regress_on_time_stage_training_set.do_the_thing(True, 1500, 3)
+  #example_regress_on_time_stage_training_set.do_the_thing(True, 1500, 3)
   do_the_thing()
 
 
