@@ -21,53 +21,30 @@ class ProgressBar:
         self.length = 50
         self.decimals = 1
         self.num_iterations = num_iterations
+        self.leading_newline = True
 
     def __enter__(self):
+        if self.leading_newline:
+            print()
         self.update()
         return self
 
     def __exit__(self, *args):
         print()
 
-    def update(self, iteration=0):
-        fraction = ("{0:." + str(self.decimals) + "f}").format(100 * (iteration / float(self.num_iterations)))
+    def update(self, iteration=0, history=None):
+        fraction = ("{0:." + str(self.decimals) + "f}").format(100 * (iteration/self.num_iterations)))
         num_filled = int(self.length * iteration // self.num_iterations)
         bar = self.fill * num_filled + '-' * (self.length - num_filled)
-        print('\rTraining |%s| %s%% complete.' % (bar, fraction), end='\r')
-
-def printProgressBar (iteration, total, prefix='Training:', suffix='complete', decimals=1, length=50, fill='█', history=None):
-    """
-    Call in a loop to create terminal progress bar
-    @params:
-        iteration   - Required  : current iteration (Int)
-        total       - Required  : total iterations (Int)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        length      - Optional  : character length of bar (Int)
-        fill        - Optional  : bar fill character (Str)
-    """
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-    filledLength = int(length * iteration // total)
-    bar = fill * filledLength + '-' * (length - filledLength)
-    if not history:
-        print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end='\r')
-    else:
-        print('\r%s |%s| %s%% %s, loss = %f.' % (prefix, bar, percent, suffix, history.history['loss'][-1]), end='\r')
-    # Print New Line on Complete
-    if iteration == total: 
-        print()
+        print('\rTraining |%s| %s%% complete, loss = %f.' % (bar, fraction, history.history['loss']), end='\r')
 
 
 def train(model, X, y, num_epochs, batch_size):
-    print('')
-    #printProgressBar(0, num_epochs)
     with ProgressBar(num_epochs) as progress_bar:
         for i in range(num_epochs):
             history = model.fit(X, y, epochs=1, batch_size=batch_size, shuffle=False, verbose=0)
             model.reset_states()
-            progress_bar.update(i)
-            #printProgressBar(i+1, num_epochs, history=history)
+            progress_bar.update(i, history)
 
 
 def lstm(features, labels, batch_size, num_epochs, num_neurons):
