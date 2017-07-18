@@ -39,7 +39,7 @@ def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):
     targets = tbamd.Targets(y)
 
     # bring the labels to shape
-    yinput = features.production[:-1]
+    #yinput = features.production[:-1]
 
     # normalize both
     input = features.matrix() 
