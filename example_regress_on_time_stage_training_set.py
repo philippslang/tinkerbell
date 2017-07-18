@@ -34,7 +34,6 @@ def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):
     #print(series.head())
 
     y = series['y'].values
-    # stage is misleading it's stage delta
     stage = series['stage'].values
     features = tbamd.Features(y, stage)
     targets = tbamd.Targets(y)
@@ -53,8 +52,8 @@ def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):
 
     yhat = [y[0]]
     for i in range(1, len(y)-1):
-        # input is last value
-        ylasttwo = y[i-1:i+1]
+        # input is first value, last discarded internally due to grad calc
+        ylasttwo = [yhat[-1], 0.0]
         stagelasttwo = stage[i-1:i+1]
         features_predict = tbamd.Features(ylasttwo, stagelasttwo)
         features_predict_normalized = normalizer.normalize_features(features_predict)
@@ -62,14 +61,14 @@ def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):
           1, features_predict_normalized.shape[1])
         target_predicted_normalized = model.predict(features_predict_normalized, batch_size=1)
         target_predicted = normalizer.denormalize_targets(target_predicted_normalized)
-        target_predicted = target_predicted[0, 0]
+        target_predicted = target_predicted[0, 0]       
         yhat += [yhat[-1]+target_predicted]
 
     
     xplot = series['x'].values[:-1]
     yref = y[:-1]
-    np.save(FNAME_TRAIN, np.array([xplot, y]))
+    np.save(FNAME_TRAIN, np.array([xplot, yref]))
     tbapl.plot([(xplot, yref), (xplot, yhat)], styles=['p', 'l'], labels=['ytrain', 'yhat'])
 
 if __name__ == '__main__':
-  do_the_thing(True, 1500, 3)
+  do_the_thing(False, 100, 3)

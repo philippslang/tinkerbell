@@ -33,10 +33,10 @@ def do_the_thing():
 
   xcomp_pts, ycomp_pts =  tbdpt.point_coordinates(pts)
 
-  stagedelta = np.zeros_like(ycomp_pts)
-  stagedelta[ixdisc] = 1.0
+  stage = np.zeros_like(ycomp_pts)
+  stage[ixdisc:] = 1.0
 
-  features = tbamd.Features(ycomp_pts, stagedelta)
+  features = tbamd.Features(ycomp_pts, stage)
   targets = tbamd.Targets(ycomp_pts)
 
   fname_normalizer = example_regress_on_time_stage_training_set.FNAME_NORM
@@ -47,16 +47,16 @@ def do_the_thing():
 
   yhat = [ycomp_pts[0]]
   for i in range(1, len(ycomp_pts)-1): 
-    # input is last value
-    ylasttwo = ycomp_pts[i-1:i+1]
-    stagelasttwo = stagedelta[i-1:i+1]
+    # input is first value, last discarded internally due to grad calc
+    ylasttwo = [yhat[-1], 0.0]
+    stagelasttwo = stage[i-1:i+1]
     features_predict = tbamd.Features(ylasttwo, stagelasttwo)
     features_predict_normalized = normalizer.normalize_features(features_predict)
     features_predict_normalized = features_predict_normalized.reshape(features_predict_normalized.shape[0], 
       1, features_predict_normalized.shape[1])
     target_predicted_normalized = model.predict(features_predict_normalized, batch_size=1)
     target_predicted = normalizer.denormalize_targets(target_predicted_normalized)
-    target_predicted = target_predicted[0, 0]
+    target_predicted = target_predicted[0, 0]       
     yhat += [yhat[-1]+target_predicted]
 
   input_xy = ((0, y0), (xdisc, 0))
@@ -71,7 +71,7 @@ def do_the_thing():
 
 if __name__ == '__main__':
   #log.basicConfig(filename='debug00.log', level=log.DEBUG)
-  #example_regress_on_time_stage_training_set.do_the_thing(True, 1500, 3)
+  example_regress_on_time_stage_training_set.do_the_thing(True, 1500, 3)
   do_the_thing()
 
 

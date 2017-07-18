@@ -30,6 +30,5 @@ if __name__ == '__main__':
 
     data['x'] = xycoords[0]
     data['y'] = xycoords[1]
-    # stage is misleading it's stagedelta
     data['stage'].iloc[ixdisc:] = 1.0
     data.to_csv(tbarc.rcparams['shale.exp.csvtimestagefname'], index=False)
