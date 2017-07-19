@@ -18,6 +18,7 @@ def makes_deep_copy(fct):
 
 class Features:
     def __init__(self, production, stage):
+        assert len(production) == len(stage), "Feature vectors must have same number of samples."
         self.production = np.copy(production)
         self.stage = np.copy(stage)
         self.eval_deltas()
@@ -26,7 +27,7 @@ class Features:
         self.dstage_dstep = np.diff(self.stage)
 
     def matrix(self):
-        # here we must account for that we lost the top row
+        # here we must account for that we lost the bottom row
         # when taking the delta from the production stage
         # this is coupled with matrix() in Targets in a sense
         # through the diff in the targets (we predict gradients)

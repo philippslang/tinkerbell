@@ -6,22 +6,26 @@ import pandas as pd
 import numpy as np
 
 
-y0 = tbarc.rcparams['shale.exp.y0_mean']
-d = 0.1
-xmax = 80.0
-num_points = 100
-xdisc = 20.0
+def do_the_thing():
+    y0 = tbarc.rcparams['shale.lstm.y0_mean']
+    d = tbarc.rcparams['shale.lstm.d']
+    xmax = tbarc.rcparams['shale.lstm.xmax']
+    num_points = tbarc.rcparams['shale.lstm.num_points']
 
-columns = ('x', 'y')
-data = pd.DataFrame(0.0, index=np.arange(num_points), columns=columns)
+    columns = ('x', 'y')
+    data = pd.DataFrame(0.0, index=np.arange(num_points), columns=columns)
 
-np.random.seed(42)
-pts, _ = tbamk.points_exponential_discontinuous_declinelinear_noisy(y0, d, xmax, xdisc, num=num_points)
+    np.random.seed(42)
+    pts, _ = tbamk.points_exponential_discontinuous_declinelinear_noisy(y0, d, xmax, xmax, num=num_points)
 
-xycoords = tbdpt.point_coordinates(pts)
+    xycoords = tbdpt.point_coordinates(pts)
 
-tbapl.plot([xycoords])
+    tbapl.plot([xycoords])
 
-data['x'] = xycoords[0]
-data['y'] = xycoords[1]
-data.to_csv(tbarc.rcparams['shale.exp.csvtimefname'], index=False)
+    data['x'] = xycoords[0]
+    data['y'] = xycoords[1]
+    data.to_csv(tbarc.rcparams['shale.lstm.fnametimecsv'], index=False)
+
+
+if __name__ == '__main__':
+    do_the_thing()
