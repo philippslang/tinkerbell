@@ -8,7 +8,7 @@ import sklearn.preprocessing as skprep
 
 def makes_deep_copy(fct):
     def ret_fct(*args, **kwargs):
-        print('Deep copy of potentially large buffer in \'{}\'()'.format(fct.__name__))
+        print('Deep copy of potentially large buffer in \'{}()\''.format(fct.__name__))
         return fct(*args, **kwargs)
     ret_fct.f = fct.__name__
     ret_fct.__doc__ = fct.__doc__
@@ -123,6 +123,22 @@ def lstm(features, targets, batch_size, num_epochs, num_neurons):
     model.compile(loss='mean_squared_error', optimizer='adam')
     train(model, X, y, num_epochs, batch_size)
     return model
+
+
+def predict(y0, stage, normalizer, model):
+    yhat = [y0]
+    for i in range(1, len(stage)-1): 
+        # input is first value, last discarded internally due to grad calc
+        ylasttwo = [yhat[-1], 0.0]
+        stagelasttwo = stage[i-1:i+1]
+        features_predict = Features(ylasttwo, stagelasttwo)
+        features_predict_normalized = normalizer.normalize_features(features_predict)
+        features_predict_normalized_timeframe = features_predict_normalized.reshape(features_predict_normalized.shape[0], 
+          1, features_predict_normalized.shape[1])
+        target_predicted_normalized = model.predict(features_predict_normalized_timeframe, batch_size=1)
+        target_predicted = normalizer.denormalize_targets(target_predicted_normalized)[0, 0]    
+        yhat += [yhat[-1]+target_predicted]
+    return np.array(yhat)
 
 
 def load(fname):
