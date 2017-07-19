@@ -24,7 +24,7 @@ def do_the_thing():
 
     data['x'] = xycoords[0]
     data['y'] = xycoords[1]
-    data.to_csv(tbarc.rcparams['shale.lstm.fnametimecsv'], index=False)
+    data.to_csv(tbarc.rcparams['shale.lstm.fnamecsv'], index=False)
 
 
 if __name__ == '__main__':

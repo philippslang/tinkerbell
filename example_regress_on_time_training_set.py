@@ -10,7 +10,7 @@ import tinkerbell.app.rcparams as tbarc
 
 
 def do_the_thing():
-    series = pd.read_csv(tbarc.rcparams['shale.lstm.fnametimecsv'])
+    series = pd.read_csv(tbarc.rcparams['shale.lstm.fnamecsv'])
 
     y = series['y'].values
     stage = np.zeros_like(y)
@@ -22,7 +22,7 @@ def do_the_thing():
     input_normalized = normalizer.normalize_features(features)  
     ydelta_normalized = normalizer.normalize_targets(targets)
 
-    fname_model = tbarc.rcparams['shale.lstm.fnametimemodel']
+    fname_model = tbarc.rcparams['shale.lstm.fnamemodel']
     if 0:
         model = tbamd.lstm(input_normalized, ydelta_normalized, 1, 250, 3)
         tbamd.save(model, fname_model)
