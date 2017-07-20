@@ -7,6 +7,7 @@ import tinkerbell.app.model as tbamd
 import tinkerbell.domain.point as tbdpt
 import example_regress_on_time_stage_training_set
 
+
 def do_the_thing():
   y0 = tbarc.rcparams['shale.lstm.y0_mean']*tbarc.rcparams['shale.lstm.y0_mult']
   d = tbarc.rcparams['shale.lstm_stage.d']

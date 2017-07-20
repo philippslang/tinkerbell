@@ -39,17 +39,15 @@ class Targets:
         """
         If time=None, assumes equidistant.
         """
-        self.production = np.copy(production)
-        self.time = None
+        self.production = np.copy(production)        
         if time:
             self.time = np.copy(time)
+        else:
+            self.time = np.arang(float(len(production))
         self.eval_gradients()
 
     def eval_gradients(self):
-        if self.time:
-            self.dp_dt = np.diff(self.production) / np.diff(self.time)
-        else:
-            self.dp_dt = np.diff(self.production)           
+        self.dp_dt = np.diff(self.production) / np.diff(self.time)        
 
     def matrix(self):
         return self.dp_dt.reshape(-1, 1)
