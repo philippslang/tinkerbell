@@ -66,7 +66,7 @@ def detect_stages(x, y, stage_zero=0, num_stages_max=None, num_samples_window=2)
         if y[i] > np.max(y[i-num_samples_window:i]):
             stages[i:] = stages[i:]+1
             num_stage_current += 1
-            if num_stages_max is not None and num_stage_current > num_stages_max:
+            if num_stages_max is not None and num_stage_current >= num_stages_max:
                 break
     return stages
 

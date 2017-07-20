@@ -2,6 +2,7 @@
 Recurrent neural network model with stages.
 
 TODO
+train on gradients (as features) if we predict gradients
 train on multiple curves
 experiment with lag (diff n)
 experiment with number of features (differences of 2, 4, 6 last observations; 
