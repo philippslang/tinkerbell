@@ -22,8 +22,7 @@ lims = (xlim, ylim)
 fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', sharey='row')
 
 training_xy = xy_from_npy(tbarc.rcparams['shale.lstm_stage.fnamentraindata'])
-inputxdisc_xy = ((tbarc.rcparams['shale.lstm_stage.xdisc_mean']), (0))
-tbapl.render(ax1, [training_xy, inputxdisc_xy], styles=['p', 'ix'], lim=lims)
+tbapl.render(ax1, [training_xy], styles=['p'], lim=lims)
 ax1.set_title('Training')
 
 inputy0_xy = ((0), (y0_pred))

@@ -5,7 +5,7 @@ import tinkerbell.app.rcparams as tbarc
 import tinkerbell.app.plot as tbapl
 import tinkerbell.app.model as tbamd
 import tinkerbell.domain.point as tbdpt
-
+import example_regress_on_time_stage_training_set
 
 def do_the_thing():
   y0 = tbarc.rcparams['shale.lstm.y0_mean']*tbarc.rcparams['shale.lstm.y0_mult']
@@ -45,7 +45,7 @@ def do_the_thing():
 
 if __name__ == '__main__':
   #log.basicConfig(filename='debug00.log', level=log.DEBUG)
-  #example_regress_on_time_stage_training_set.do_the_thing(False, 1500, 3)
+  example_regress_on_time_stage_training_set.do_the_thing(True, 500, 3)
   do_the_thing()
 
 

@@ -8,7 +8,7 @@ import sklearn.preprocessing as skprep
 
 def makes_deep_copy(fct):
     def ret_fct(*args, **kwargs):
-        print('Deep copy of potentially large buffer in \'{}()\''.format(fct.__name__))
+        print('Think about this deep copy of a potentially large buffer in \'{}()\''.format(fct.__name__))
         return fct(*args, **kwargs)
     ret_fct.f = fct.__name__
     ret_fct.__doc__ = fct.__doc__
@@ -17,33 +17,42 @@ def makes_deep_copy(fct):
 
 
 class Features:
-    def __init__(self, production, stage):
+    def __init__(self, production, stage):        
         assert len(production) == len(stage), "Feature vectors must have same number of samples."
         self.production = np.copy(production)
         self.stage = np.copy(stage)
-        self.eval_deltas()
+        self.eval_gradients()
 
-    def eval_deltas(self):
-        self.dstage_dstep = np.diff(self.stage)
+    def eval_gradients(self):
+        self.stage_delta = np.diff(self.stage)
 
     def matrix(self):
         # here we must account for that we lost the bottom row
         # when taking the delta from the production stage
         # this is coupled with matrix() in Targets in a sense
         # through the diff in the targets (we predict gradients)
-        return np.transpose(np.array([self.production[:-1], self.dstage_dstep]))
+        return np.transpose(np.array([self.production[:-1], self.stage_delta]))
 
 
 class Targets:
-    def __init__(self, production):
+    def __init__(self, production, time=None):
+        """
+        If time=None, assumes equidistant.
+        """
         self.production = np.copy(production)
-        self.eval_deltas()
+        self.time = None
+        if time:
+            self.time = np.copy(time)
+        self.eval_gradients()
 
-    def eval_deltas(self):
-        self.dproduction_dt = np.diff(self.production)
+    def eval_gradients(self):
+        if self.time:
+            self.dp_dt = np.diff(self.production) / np.diff(self.time)
+        else:
+            self.dp_dt = np.diff(self.production)           
 
     def matrix(self):
-        return self.dproduction_dt.reshape(-1, 1)
+        return self.dp_dt.reshape(-1, 1)
 
 
 class Normalizer:
@@ -130,15 +139,19 @@ def predict(y0, stage, normalizer, model):
     yhat = [y0]
     for i in range(1, len(stage)-1): 
         # input is first value, last discarded internally due to grad calc
-        ylasttwo = [yhat[-1], 0.0]
-        stagelasttwo = stage[i-1:i+1]
-        features_predict = Features(ylasttwo, stagelasttwo)
-        features_predict_normalized = normalizer.normalize_features(features_predict)
-        features_predict_normalized_timeframe = features_predict_normalized.reshape(features_predict_normalized.shape[0], 
-          1, features_predict_normalized.shape[1])
-        target_predicted_normalized = model.predict(features_predict_normalized_timeframe, batch_size=1)
-        target_predicted = normalizer.denormalize_targets(target_predicted_normalized)[0, 0]    
-        yhat += [yhat[-1]+target_predicted]
+        yprevious = yhat[-1]
+        yinput = [yprevious, 0.0]
+        stageinput = stage[i-1:i+1] # contains stage[i-1] and stage[i]
+        features = Features(yinput, stageinput)
+        features_normalized = normalizer.normalize_features(features)
+        features_normalized_timeframe = features_normalized.reshape(features_normalized.shape[0], 
+          1, features_normalized.shape[1])
+        targets_normalized = model.predict(features_normalized_timeframe, batch_size=1)
+        targets = normalizer.denormalize_targets(targets_normalized)
+        ygrad = targets[0, 0] 
+        dtime = 1.0   
+        dy = dtime * ygrad
+        yhat += [yprevious+dy]
     return np.array(yhat)
 
 
