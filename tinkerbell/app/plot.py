@@ -6,6 +6,7 @@ plt.style.use('ggplot')
 
 STYLEFALLBACK = {'linestyle': 'solid', 'linewidth': 2, 'alpha': 0.7}
 TOMPLSTYLE = {'p': {'marker': 'x', 'linestyle': 'None'}, 'l': STYLEFALLBACK,
+  'ls': {'linestyle': 'dashed', 'linewidth': 2, 'alpha': 0.7},
   'iy': {'marker': '>', 'linestyle': 'None', 'color': 'k', 'markerfacecolor': 'None'},
   'ix': {'marker': '^', 'linestyle': 'None', 'color': 'k', 'markerfacecolor': 'None'}}
 

@@ -21,9 +21,6 @@ import tinkerbell.app.plot as tbapl
 import tinkerbell.app.model as tbamd
 import tinkerbell.app.rcparams as tbarc
 
-#FNAME = 'data_demo/model_lstm_stages_exp.h5'
-#FNAME_TRAIN = 'data_demo/time_stage_lstm_train.npy'
-
 
 def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):  
     series = pd.read_csv(tbarc.rcparams['shale.lstm_stage.fnamecsv'])
