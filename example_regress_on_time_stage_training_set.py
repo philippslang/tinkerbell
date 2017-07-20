@@ -29,10 +29,11 @@ def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):
     series = pd.read_csv(tbarc.rcparams['shale.lstm_stage.fnamecsv'])
     #print(series.head())
 
-    y = series['y'].values
+    production = series['y'].values
+    time = series['x'].values
     stage = series['stage'].values
-    features = tbamd.Features(y, stage)
-    targets = tbamd.Targets(y)
+    features = tbamd.Features(production, stage)
+    targets = tbamd.Targets(production, time)
 
     # normalize both
     normalizer = tbamd.Normalizer.fit(features, targets) 
@@ -48,10 +49,10 @@ def do_the_thing(fit=True, num_epochs=1500, num_neurons=3):
     else:
         model = tbamd.load(fname_model)
 
-    yhat = tbamd.predict(y[0], stage, normalizer, model)
+    yhat = tbamd.predict(production[0], stage, normalizer, model, time)
     
-    xplot = series['x'].values[:-1]
-    yref = y[:-1]
+    xplot = time[:-1]
+    yref = production[:-1]
     fname_traindata = tbarc.rcparams['shale.lstm_stage.fnamentraindata']
     np.save(fname_traindata, np.array([xplot, yref]))
     tbapl.plot([(xplot, yref), (xplot, yhat)], styles=['p', 'l'], labels=['ytrain', 'yhat'])

@@ -40,10 +40,10 @@ class Targets:
         If time=None, assumes equidistant.
         """
         self.production = np.copy(production)        
-        if time:
+        if time is not None:
             self.time = np.copy(time)
         else:
-            self.time = np.arang(float(len(production))
+            self.time = np.arange(float(len(production)))
         self.eval_gradients()
 
     def eval_gradients(self):
@@ -133,8 +133,8 @@ def lstm(features, targets, batch_size, num_epochs, num_neurons):
     return model
 
 
-def predict(y0, stage, normalizer, model):
-    yhat = [y0]
+def predict(y_0, stage, normalizer, model, time=None):
+    yhat = [y_0]
     for i in range(1, len(stage)-1): 
         # input is first value, last discarded internally due to grad calc
         yprevious = yhat[-1]
@@ -146,10 +146,13 @@ def predict(y0, stage, normalizer, model):
           1, features_normalized.shape[1])
         targets_normalized = model.predict(features_normalized_timeframe, batch_size=1)
         targets = normalizer.denormalize_targets(targets_normalized)
-        ygrad = targets[0, 0] 
-        dtime = 1.0   
-        dy = dtime * ygrad
-        yhat += [yprevious+dy]
+        dy_dt = targets[0, 0] 
+        if time is None:
+            time_delta = 1.0
+        else:
+            time_delta = time[i]-time[i-1]
+        y_delta = time_delta * dy_dt
+        yhat += [yprevious+y_delta]
     return np.array(yhat)
 
 
