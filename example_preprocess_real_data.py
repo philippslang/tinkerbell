@@ -17,7 +17,7 @@ name_well, time_refrac_predict = 'Austin', 50.0
 #name_well = 'Hovda'
 #name_well = 'Dantuhy'
 inspect_only = False
-version_model = 0
+version_model = 1
 fit = False
 num_stages_max = 2
 
