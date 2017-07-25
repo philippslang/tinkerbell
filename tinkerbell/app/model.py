@@ -65,7 +65,6 @@ class Normalizer:
     def denormalize_features(self, feature_matrix):
         return self.features.inverse_transform(feature_matrix)
 
-    @makes_deep_copy
     def normalize_targets(self, targets):
         return self.targets.transform(targets.matrix())
 
@@ -142,10 +141,6 @@ def lstmseq(feature_matrix, target_matrix, num_gradients_window):
     dp_dt = target_matrix[:,0]
     data_matrix = [dp_dt, stage_delta]
 
-    #print(stage_delta, stage_delta.shape)
-    #print(dp_dt, dp_dt.shape)
-    #sys.exit()
-
     num_features, num_targets = 2, 1 # tied to Features and Targets
     offset_prediction = 1
     num_samples = feature_matrix.shape[0] - num_gradients_window - offset_prediction
@@ -159,7 +154,7 @@ def lstmseq(feature_matrix, target_matrix, num_gradients_window):
                 X[isample, igradient, ifeature] = data_matrix[ifeature][isample+igradient]
             for itarget in range(num_targets):
                 y[isample, igradient, itarget] = data_matrix[itarget][isample+igradient+offset_prediction]
-
+    
     # expected input data shape: (batch_size, timesteps, data_dim)    
     model = kem.Sequential()
     model.add(kel.LSTM(num_features, 
@@ -169,15 +164,49 @@ def lstmseq(feature_matrix, target_matrix, num_gradients_window):
 
     model.compile(loss='mean_squared_error', optimizer='adam')
     model.fit(X, y, batch_size=5, epochs=150)
-    """X, y = features, targets[:, 0]
-    X = X.reshape(X.shape[0], 1, X.shape[1])
-    model = kem.Sequential()
-    model.add(kel.LSTM(num_neurons, batch_input_shape=(batch_size, X.shape[1], X.shape[2]), stateful=True))
-    model.add(kel.Dense(1))
-    model.compile(loss='mean_squared_error', optimizer='adam')
-    train(model, X, y, num_epochs, batch_size)"""
-
     return model
+
+
+def predictseq(yinit, stage, normalizer, model, time=None):
+    yhat = list(yinit)
+    offset_prediction = 1
+    num_yinput_window = len(yhat)
+    num_features = 2
+    num_gradients_window = num_yinput_window - 1
+    for i in range(num_gradients_window, len(stage) - num_gradients_window - offset_prediction): 
+        productioninput = yhat[-num_yinput_window:]
+        stageinput = stage[i-num_gradients_window:i+1]
+        feature = Features(productioninput, stageinput)
+        feature_matrix = normalizer.normalize_features(feature) 
+        stage_delta = feature_matrix[:,1]
+        target = Targets(productioninput)
+        target_matrix = normalizer.normalize_targets(target)
+        dp_dt = target_matrix[:,0]
+        data_matrix = [dp_dt, stage_delta]
+        X = np.zeros((1, num_gradients_window, num_features))
+        for igradient in range(num_gradients_window):
+            for ifeature in range(num_features):
+                X[0, igradient, ifeature] = data_matrix[ifeature][igradient]
+        #print(X)
+        #sys.exit()
+        #features_matrix_timeframe = np.array([features_matrix])
+        #print(features_matrix_timeframe)
+        #sys.exit()
+        targets_normalized = model.predict(X, batch_size=1)
+        #print(targets_normalized)
+        #sys.exit()        
+        targets = normalizer.denormalize_targets(targets_normalized[0])
+        #print(targets)
+        #print(targets[-1, 0])
+        #sys.exit()
+        dy_dt = targets[-1, 0]
+        if time is None:
+            time_delta = 1.0
+        else:
+            time_delta = time[i]-time[i-1]
+        y_delta = time_delta * dy_dt
+        yhat += [yhat[-1]+y_delta]
+    return np.array(yhat)
 
 
 def predict(y_0, stage, normalizer, model, time=None):
