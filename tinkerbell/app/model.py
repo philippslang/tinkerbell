@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import sys
 import logging as log
 import keras.models as kem
 import keras.layers as kel
@@ -121,15 +122,61 @@ def train(model, X, y, num_epochs, batch_size):
 
 
 @makes_deep_copy
-def lstm(features, targets, batch_size, num_epochs, num_neurons):
+def lstm(feature_matrix, target_matrix, batch_size, num_epochs, num_neurons):
     log.info('LSTM model with {0:d} neurons'.format(num_neurons))
-    X, y = features, targets[:, 0]
+    X, y = feature_matrix, target_matrix[:, 0]
     X = X.reshape(X.shape[0], 1, X.shape[1])
     model = kem.Sequential()
     model.add(kel.LSTM(num_neurons, batch_input_shape=(batch_size, X.shape[1], X.shape[2]), stateful=True))
     model.add(kel.Dense(1))
     model.compile(loss='mean_squared_error', optimizer='adam')
     train(model, X, y, num_epochs, batch_size)
+    return model
+
+
+@makes_deep_copy
+def lstmseq(feature_matrix, target_matrix, num_gradients_window):
+    log.info('LSTM sequence model with two recurrent layers')
+
+    stage_delta = feature_matrix[:,1]
+    dp_dt = target_matrix[:,0]
+    data_matrix = [dp_dt, stage_delta]
+
+    #print(stage_delta, stage_delta.shape)
+    #print(dp_dt, dp_dt.shape)
+    #sys.exit()
+
+    num_features, num_targets = 2, 1 # tied to Features and Targets
+    offset_prediction = 1
+    num_samples = feature_matrix.shape[0] - num_gradients_window - offset_prediction
+    
+    X = np.zeros((num_samples, num_gradients_window, num_features))
+    y = np.zeros((num_samples, num_gradients_window, num_targets))
+    igradient_offset = 0
+    for isample in range(num_samples):
+        for igradient in range(num_gradients_window):
+            for ifeature in range(num_features):
+                X[isample, igradient, ifeature] = data_matrix[ifeature][isample+igradient]
+            for itarget in range(num_targets):
+                y[isample, igradient, itarget] = data_matrix[itarget][isample+igradient+offset_prediction]
+
+    # expected input data shape: (batch_size, timesteps, data_dim)    
+    model = kem.Sequential()
+    model.add(kel.LSTM(num_features, 
+      return_sequences=True, # same num as input, ie num_gradients_window
+      input_shape=(num_gradients_window, num_features)))  #  dQdt and stage_delta, returns a sequence (num_gradients_window) of vectors of dimension 2
+    model.add(kel.LSTM(num_targets, return_sequences=True))  # returns a sequence (num_gradients_window) of vectors of dimension 1
+
+    model.compile(loss='mean_squared_error', optimizer='adam')
+    model.fit(X, y, batch_size=5, epochs=150)
+    """X, y = features, targets[:, 0]
+    X = X.reshape(X.shape[0], 1, X.shape[1])
+    model = kem.Sequential()
+    model.add(kel.LSTM(num_neurons, batch_input_shape=(batch_size, X.shape[1], X.shape[2]), stateful=True))
+    model.add(kel.Dense(1))
+    model.compile(loss='mean_squared_error', optimizer='adam')
+    train(model, X, y, num_epochs, batch_size)"""
+
     return model
 
 

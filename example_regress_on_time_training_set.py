@@ -23,7 +23,7 @@ def do_the_thing():
     ydelta_normalized = normalizer.normalize_targets(targets)
 
     fname_model = tbarc.rcparams['shale.lstm.fnamemodel']
-    if 0:
+    if 1:
         model = tbamd.lstm(input_normalized, ydelta_normalized, 1, 250, 3)
         tbamd.save(model, fname_model)
     else:

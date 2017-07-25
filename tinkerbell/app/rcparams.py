@@ -14,4 +14,5 @@ rcparams = {'shale.exp.k': 2, 'shale.exp.num_knots_internal': 4,
             'shale.lstm_stage.fnamentraindata': 'data_demo/shale_lstm_time_stage_train.npy',
             'shale.lstm_stage.fnamenblinddata': 'data_demo/shale_lstm_time_stage_blind.npy',
             'shale.lstm_stage.fnamenpreddata': 'data_demo/shale_lstm_time_stage_pred.npy',
-            'shale.lstm_stage.xdisc_mult': 0.15, 'shale.lstm.y0_mult': 0.7}
+            'shale.lstm_stage.xdisc_mult': 0.15, 'shale.lstm.y0_mult': 0.7,
+            'shale.lstm.sequence.fnamemodel': 'data_demo/model_lstm_time_sequence.h5'}

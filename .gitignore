@@ -102,3 +102,4 @@ ENV/
 
 docs/
 img/
+.vscode/
