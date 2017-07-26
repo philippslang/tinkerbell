@@ -12,7 +12,7 @@ def do_the_thing():
     xmax = tbarc.rcparams['shale.lstm.xmax']
     num_points = tbarc.rcparams['shale.lstm.num_points']
 
-    columns = ('x', 'y')
+    columns = ('x', 'y', 'stage')
     data = pd.DataFrame(0.0, index=np.arange(num_points), columns=columns)
 
     np.random.seed(42)
