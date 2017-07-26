@@ -278,22 +278,15 @@ def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3):
             itarget = 0
             y[isequence, itimestep, itarget] = production_normalized[isequence+itimestep+offset_forecast, 0]
 
-    
     log.info(X)
     log.info(y)
     
     # expected input data shape: (batch_size, timesteps, data_dim) 
     model = kem.Sequential()
-    model.add(kel.LSTM(num_timesteps, input_shape=(num_timesteps, num_features), return_sequences=True))
+    model.add(kel.SimpleRNN(num_timesteps, input_shape=(num_timesteps, num_features), return_sequences=True))
+    #model.add(kel.LSTM(num_timesteps, return_sequences=True))
     model.add(kel.TimeDistributed(kel.Dense(1)))
     model.compile(loss='mean_squared_error', optimizer='adam')
-
-    """model = kem.Sequential()
-    model.add(kel.LSTM(num_targets, 
-      return_sequences=True, # same num as input, ie num_gradients_window
-      input_shape=(num_timesteps, num_features)))  #  dQdt and stage_delta, returns a sequence (num_gradients_window) of vectors of dimension 2
-    model.add(kel.TimeDistributed(kel.Dense(1)))
-    model.compile(loss='mean_squared_error', optimizer='adam')"""
     
     model.summary()
     model.fit(X, y, batch_size=1, epochs=num_epochs)
