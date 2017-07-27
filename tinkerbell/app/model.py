@@ -237,7 +237,8 @@ def save(model, fname):
 @makes_deep_copy
 def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3, num_units=3):
     log.info('LSTM sequence model with window.')
-
+    RNN_t = kel.LSTM
+    #RNN_t = kel.SimpleRNN
     num_time = len(production)
     offset_forecast = 1
     num_sequences = num_time - num_timesteps
@@ -271,7 +272,7 @@ def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3, num_units=3)
     # expected input data shape: (batch_size, timesteps, data_dim) 
     batch_size = 1
     model = kem.Sequential()
-    model.add(kel.LSTM(num_units, batch_input_shape=(batch_size, num_timesteps, num_features), 
+    model.add(RNN_t(num_units, batch_input_shape=(batch_size, num_timesteps, num_features), 
       return_sequences=True, stateful=True))
     #model.add(kel.LSTM(num_timesteps, return_sequences=True))
     model.add(kel.TimeDistributed(kel.Dense(1)))

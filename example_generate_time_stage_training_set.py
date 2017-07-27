@@ -26,4 +26,8 @@ if __name__ == '__main__':
     data['stage'].iloc[ixdisc:] = 1.0
     data.to_csv(tbarc.rcparams['shale.lstm_stage.fnamecsv'], index=False)
 
-    tbapl.plot([xycoords])
+    xstage = data['x'].values
+    ystage = data['stage'].values
+    tbapl.plot([xycoords], labels=['production'], save_as='img/exp_time_two_stages.png', 
+      secxyarraytuplesiterable=[(xstage, ystage)], seclabels=['stage'], secstyles=['lstage'],
+      hide_labels=True, xlabel='time', ylabel='production', secylabel='stage')

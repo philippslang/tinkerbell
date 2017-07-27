@@ -12,6 +12,25 @@ fname_json = 'data_demo/shale_fracflow00.json'
 with open(fname_json) as f:
     data = json.load(f)
 
+
+
+well_names = ['Austin', 'Hovda', 'Dantuhy']
+well_data = []
+for well_name in well_names:
+    data_well = data[well_name]
+    time =  np.array(data_well['time'])[3:]
+    production =  np.array(data_well['production'])[3:]
+    well_data += [(time, production)]
+
+
+tbapl.plot(well_data, xlabel='time (months)', ylabel='production (bbl/d)', styles=['l']*len(well_names), 
+  labels=well_names, save_as='img/well_summary.png')
+
+sys.exit()
+
+
+
+
 name_well = 'Evenson'
 name_well, time_refrac_predict = 'Austin', 50.0
 #name_well = 'Hovda'
