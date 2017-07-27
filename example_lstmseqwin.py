@@ -13,7 +13,7 @@ import tinkerbell.app.rcparams as tbarc
 
 def do_the_thing():
     fname_csv = tbarc.rcparams['shale.lstm.fnamecsv']
-    fname_csv = tbarc.rcparams['shale.lstm_stage.fnamecsv']
+    #fname_csv = tbarc.rcparams['shale.lstm_stage.fnamecsv']
     name_dataset = fname_csv[10:-4]
     log.info(name_dataset)
     series = pd.read_csv(fname_csv)
@@ -27,7 +27,7 @@ def do_the_thing():
     num_timesteps = 3
     num_units = 3
     num_epochs = 500
-    if 0:
+    if 1:
         model, normalizer = tbamd.lstmseqwin(y, stage, num_epochs, num_timesteps, num_units)
         tbamd.save(model, fname_model)
         pickle.dump(normalizer, open(fname_normalizer, 'wb'))
