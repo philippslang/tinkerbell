@@ -24,9 +24,11 @@ def do_the_thing():
  
     fname_model =  tbarc.rcparams['shale.lstm.sequence.win.fnamemodel'][:-3] + '_' + name_dataset + '.h5'
     fname_normalizer = tbarc.rcparams['shale.lstm.sequence.win.fnamenorm'][:-3] + '_' + name_dataset + '.h5'
-    num_timesteps = 5
-    if 1:
-        model, normalizer = tbamd.lstmseqwin(y, stage, 100, num_timesteps)
+    num_timesteps = 3
+    num_units = 3
+    num_epochs = 500
+    if 0:
+        model, normalizer = tbamd.lstmseqwin(y, stage, num_epochs, num_timesteps, num_units)
         tbamd.save(model, fname_model)
         pickle.dump(normalizer, open(fname_normalizer, 'wb'))
     else:

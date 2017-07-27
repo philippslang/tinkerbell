@@ -7,6 +7,7 @@ import keras.layers as kel
 import sklearn.preprocessing as skprep
 import collections as coll
 
+
 def makes_deep_copy(fct):
     def ret_fct(*args, **kwargs):
         print('Think about this deep copy of a potentially large buffer in \'{}()\''.format(fct.__name__))
@@ -133,7 +134,7 @@ def lstm(feature_matrix, target_matrix, batch_size, num_epochs, num_neurons):
     return model
 
 
-NormalizerSeq = coll.namedtuple("NormalizerSeq", "time stage_delta production")
+NormalizerSeq = coll.namedtuple("NormalizerSeq", "time stage production")
 
 
 @makes_deep_copy
@@ -175,13 +176,6 @@ def lstmseq(time, production, stage, num_epochs=1000):
     model.add(kel.LSTM(num_timesteps, input_shape=(num_timesteps, num_features), return_sequences=True))
     model.add(kel.TimeDistributed(kel.Dense(1)))
     model.compile(loss='mean_squared_error', optimizer='adam')
-
-    """model = kem.Sequential()
-    model.add(kel.LSTM(num_targets, 
-      return_sequences=True, # same num as input, ie num_gradients_window
-      input_shape=(num_timesteps, num_features)))  #  dQdt and stage_delta, returns a sequence (num_gradients_window) of vectors of dimension 2
-    model.add(kel.TimeDistributed(kel.Dense(1)))
-    model.compile(loss='mean_squared_error', optimizer='adam')"""
     
     model.summary()
     model.fit(X, y, batch_size=1, epochs=num_epochs)
@@ -197,7 +191,7 @@ def predictseq(x, stage, normlizerseq, model):
     num_timesteps = len(stage)
     num_features = 2
 
-    stage_delta_normalized = normlizerseq.stage_delta.transform(stage_delta.reshape(-1, 1))
+    stage_delta_normalized = normlizerseq.stage.transform(stage_delta.reshape(-1, 1))
     time_normalized = normlizerseq.time.transform(time.reshape(-1, 1))
 
     X = np.zeros((1, num_timesteps, num_features))
@@ -241,7 +235,7 @@ def save(model, fname):
 
 
 @makes_deep_copy
-def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3):
+def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3, num_units=3):
     log.info('LSTM sequence model with window.')
 
     num_time = len(production)
@@ -251,19 +245,11 @@ def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3):
     
     num_targets = 1
     log.info(num_timesteps)
-
-    # sinc this is delta between [i] and [i-1], we loose the first row, but we
-    # want the relevant change when we predict, so we move the whole thing up
-    # so that stage_delta[i] is the change from stage_delta[i] to stage_delta[i+1]
-    # so for [0, 0, 1, 1] we produce a delta mapping of 
-    #        [0, 1, 0, 0]
-    stage_delta = np.zeros_like(stage)
-    stage_delta[:-1] = np.diff(stage)
-
-    normalizer_stage_delta = skprep.MinMaxScaler(feature_range=(-1, 1))
+    
+    normalizer_stage = skprep.MinMaxScaler(feature_range=(-1, 1))
     normalizer_production = skprep.MinMaxScaler(feature_range=(-1, 1))
 
-    stage_delta_normalized = normalizer_stage_delta.fit_transform(stage_delta.reshape(-1, 1))
+    stage_normalized = normalizer_stage.fit_transform(stage.reshape(-1, 1))
     production_normalized = normalizer_production.fit_transform(production.reshape(-1, 1))
     
     X = np.zeros((num_sequences, num_timesteps, num_features))
@@ -274,23 +260,30 @@ def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3):
             ifeature = 0
             X[isequence, itimestep, ifeature] = production_normalized[isequence+itimestep, 0]
             ifeature = 1
-            X[isequence, itimestep, ifeature] = stage_delta_normalized[isequence+itimestep, 0]
+            X[isequence, itimestep, ifeature] = stage_normalized[isequence+itimestep+offset_forecast, 0]
             itarget = 0
             y[isequence, itimestep, itarget] = production_normalized[isequence+itimestep+offset_forecast, 0]
-
-    log.info(X)
-    log.info(y)
+        log.info('<sequence', isequence)            
+        log.info(X[isequence])
+        log.info(y[isequence])
+        log.info('sequence', isequence, '>')
     
     # expected input data shape: (batch_size, timesteps, data_dim) 
+    batch_size = 1
     model = kem.Sequential()
-    model.add(kel.SimpleRNN(num_timesteps, input_shape=(num_timesteps, num_features), return_sequences=True))
+    model.add(kel.LSTM(num_units, batch_input_shape=(batch_size, num_timesteps, num_features), 
+      return_sequences=True, stateful=True))
     #model.add(kel.LSTM(num_timesteps, return_sequences=True))
     model.add(kel.TimeDistributed(kel.Dense(1)))
     model.compile(loss='mean_squared_error', optimizer='adam')
     
     model.summary()
-    model.fit(X, y, batch_size=1, epochs=num_epochs)
-    return model, NormalizerSeq(None, normalizer_stage_delta, normalizer_production)
+    with ProgressBar(num_epochs) as progress_bar:
+        for iepoch in range(num_epochs):
+            history = model.fit(X, y, epochs=1, batch_size=batch_size, shuffle=False, verbose=0)
+            model.reset_states()
+            progress_bar.update(iepoch, history)
+    return model, NormalizerSeq(None, normalizer_stage, normalizer_production)
 
 
 def predictseqwin(y_init, stage, normalizer, model):
@@ -300,14 +293,12 @@ def predictseqwin(y_init, stage, normalizer, model):
     num_features = 2 # production and stage delta
     X = np.zeros((1, num_timesteps, num_features))
     for itime in range(num_timesteps, num_y-1):
-        stage_window = np.array(stage[itime-num_timesteps:itime])
+        stage_window = np.array(stage[itime-num_timesteps+1:itime+1])
         production_window = np.array(yhat[itime-num_timesteps:itime])
-        stage_delta_window = np.zeros_like(stage_window)
-        stage_delta_window[:-1] = np.diff(stage_window)
-        stage_delta_window_normalized = normalizer.stage_delta.transform(stage_delta_window.reshape(-1, 1))
+        stage_window_normalized = normalizer.stage.transform(stage_window.reshape(-1, 1))
         production_window_normalized = normalizer.production.transform(production_window.reshape(-1, 1))
         X[0, :, 0] = production_window_normalized[:,0]
-        X[0, :, 1] = stage_delta_window_normalized[:,0]
+        X[0, :, 1] = stage_window_normalized[:,0]
         y = model.predict(X, batch_size=1)
         production_predicted = normalizer.production.inverse_transform(y[0])
         yhat += [production_predicted[-1, 0]]
