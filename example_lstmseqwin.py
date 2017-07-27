@@ -22,8 +22,8 @@ def do_the_thing():
     x = series['x'].values
     stage = series['stage'].values
  
-    fname_model =  tbarc.rcparams['shale.lstm.sequence.fnamemodel'][:-3] + '_' + name_dataset + '.h5'
-    fname_normalizer = tbarc.rcparams['shale.lstm.sequence.fnamenorm'][:-3] + '_' + name_dataset + '.h5'
+    fname_model =  tbarc.rcparams['shale.lstm.sequence.win.fnamemodel'][:-3] + '_' + name_dataset + '.h5'
+    fname_normalizer = tbarc.rcparams['shale.lstm.sequence.win.fnamenorm'][:-3] + '_' + name_dataset + '.h5'
     num_timesteps = 5
     if 1:
         model, normalizer = tbamd.lstmseqwin(y, stage, 100, num_timesteps)
