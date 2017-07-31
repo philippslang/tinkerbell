@@ -24,22 +24,21 @@ def do_the_thing():
  
     fname_model =  tbarc.rcparams['shale.lstm.sequence.win.fnamemodel'][:-3] + '_' + name_dataset + '.h5'
     fname_normalizer = tbarc.rcparams['shale.lstm.sequence.win.fnamenorm'][:-3] + '_' + name_dataset + '.h5'
-    num_timesteps = 3
+    num_timesteps = 2
     num_units = 3
-    num_epochs = 1000
-    if 0:
-        model, normalizer = tbamd.lstmseqwin(y, stage, num_epochs, num_timesteps, num_units)
+    num_epochs = 200
+    offset_forecast = num_timesteps
+    if 1:
+        model, normalizer = tbamd.lstmseqwin(y, stage, num_epochs, num_timesteps, 
+          num_units, offset_forecast)
         tbamd.save(model, fname_model)
         pickle.dump(normalizer, open(fname_normalizer, 'wb'))
     else:
         model = tbamd.load(fname_model)
         normalizer = pickle.load(open(fname_normalizer, 'rb'))
 
-    log.info("Inputs: {}".format(model.input_shape))
-    log.info("Outputs: {}".format(model.output_shape))
-
     if 1:
-        ypred = tbamd.predictseqwin(y[:num_timesteps], stage, normalizer, model)
+        ypred = tbamd.predictseqwin(y[:num_timesteps], stage, normalizer, model, offset_forecast)
         xpred = x[:len(ypred)]
         tbapl.plot([(x, y), (xpred, ypred)], styles=['p', 'l'], labels=['ytrain', 'yhat'])
 

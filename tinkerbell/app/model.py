@@ -4,6 +4,7 @@ import sys
 import logging as log
 import keras.models as kem
 import keras.layers as kel
+import keras.callbacks as kec
 import sklearn.preprocessing as skprep
 import collections as coll
 
@@ -235,13 +236,13 @@ def save(model, fname):
 
 
 @makes_deep_copy
-def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3, num_units=3):
+def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3, num_units=3,
+               offset_forecast=1):
     log.info('LSTM sequence model with window.')
     RNN_t = kel.LSTM
     #RNN_t = kel.SimpleRNN
     num_time = len(production)
-    offset_forecast = 1
-    num_sequences = num_time - num_timesteps
+    num_sequences = num_time - num_timesteps - offset_forecast
     num_features = 2 # production and stage delta
     
     num_targets = 1
@@ -274,20 +275,20 @@ def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3, num_units=3)
     model = kem.Sequential()
     model.add(RNN_t(num_units, batch_input_shape=(batch_size, num_timesteps, num_features), 
       return_sequences=True, stateful=True))
-    #model.add(kel.LSTM(num_timesteps, return_sequences=True))
+    #model.add(kel.Dropout(0.2))
     model.add(kel.TimeDistributed(kel.Dense(1)))
     model.compile(loss='mean_squared_error', optimizer='adam')
+
+    reset_state = kec.LambdaCallback(on_epoch_end=lambda *_ : model.reset_states())
     
     model.summary()
-    with ProgressBar(num_epochs) as progress_bar:
-        for iepoch in range(num_epochs):
-            history = model.fit(X, y, epochs=1, batch_size=batch_size, shuffle=False, verbose=0)
-            model.reset_states()
-            progress_bar.update(iepoch, history)
+    model.fit(X, y, epochs=num_epochs, batch_size=batch_size, shuffle=False,
+      callbacks=[reset_state])
+    
     return model, NormalizerSeq(None, normalizer_stage, normalizer_production)
 
 
-def predictseqwin(y_init, stage, normalizer, model):
+def predictseqwin(y_init, stage, normalizer, model, offset_forecast):
     yhat = list(y_init)
     num_timesteps = len(y_init)
     num_y = len(stage)
@@ -302,6 +303,6 @@ def predictseqwin(y_init, stage, normalizer, model):
         X[0, :, 1] = stage_window_normalized[:,0]
         y = model.predict(X, batch_size=1)
         production_predicted = normalizer.production.inverse_transform(y[0])
-        yhat += [production_predicted[-1, 0]]
+        yhat += [production_predicted[-offset_forecast, 0]] # always next value
     return np.array(yhat)
     
