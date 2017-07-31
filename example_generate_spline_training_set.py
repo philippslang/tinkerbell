@@ -1,4 +1,5 @@
 import tinkerbell.app.plot as tbapl
+import tinkerbell.domain.point as tbdpt
 import tinkerbell.domain.make as tbdmk
 import tinkerbell.domain.curve as tbdcv
 import tinkerbell.app.make as tbamk
@@ -6,8 +7,8 @@ import tinkerbell.app.rcparams as tbarc
 import pandas as pd
 import numpy as np
 
-XDISC_MIN = 10.0
-XDISC_MAX = 35.0
+XDISC_MIN = 20.0
+XDISC_MAX = 30.0
 PMAX = 6
 D = 0.1
 
@@ -35,6 +36,10 @@ def do_the_thing():
             pts, _ = tbamk.points_exponential_discontinuous_declinebase2_noisy(y0, d, pmax, xdisc)
             t = tbamk.knots_internal_four_heavy_right(xdisc, xmax, dx)
             crv = tbdmk.curve_lsq_fixed_knots(pts, t, k)
+
+            if 0:
+                tbapl.plot([tbdpt.point_coordinates(pts), crv.xycoordinates()], ['p', 'l'], hide_labels=True,
+                    ylabel='production', xlabel='time')
 
             data.iat[idatarow, 0] = y0
             data.iat[idatarow, 1] = xdisc

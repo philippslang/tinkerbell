@@ -52,7 +52,7 @@ def points_exponential_discontinuous_declinebase2_noisy(yi, d, pmax, xdisc, y_ju
 
 
 def knots_internal_four_heavy_right(xcenter, xmax, dx):
-    return [xcenter-dx, xcenter, xcenter+dx, xmax-(xmax-xcenter+dx)/3]
+    return [xcenter-dx, xcenter, xcenter+dx, xmax-(xmax-xcenter+dx)/2]
 
 
 def detect_stages(x, y, stage_zero=0, num_stages_max=None, num_samples_window=2):

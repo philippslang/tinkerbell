@@ -18,4 +18,6 @@ rcparams = {'shale.exp.k': 2, 'shale.exp.num_knots_internal': 4,
             'shale.lstm.sequence.fnamemodel': 'data_demo/model_lstm_time_sequence.h5',
             'shale.lstm.sequence.fnamenorm': 'data_demo/norm_lstm_time_sequence.h5',
             'shale.lstm.sequence.win.fnamemodel': 'data_demo/model_lstm_time_sequence_win.h5',
-            'shale.lstm.sequence.win.fnamenorm': 'data_demo/norm_lstm_time_sequence_win.h5'}
+            'shale.lstm.sequence.win.fnamenorm': 'data_demo/norm_lstm_time_sequence_win.h5',
+            'shale.lstm.sequence.win.grad.fnamemodel': 'data_demo/model_lstm_time_sequence_win_grad.h5',
+            'shale.lstm.sequence.win.grad.fnamenorm': 'data_demo/norm_lstm_time_sequence_win_grad.h5'}

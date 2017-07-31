@@ -63,7 +63,7 @@ def do_the_thing():
     dx = tbarc.rcparams['shale.exp.dx']
     xmin = 0.0
     xmax = y0_mean
-    features_test = [[xmax/4], [xmax/3], [xmax/2], [xmax/1.5]]
+    features_test = [[xmax/3], [xmax/2]]#, [xmax/1.5]]
     features_test_normalized = normalizer_features.transform(features_test)
     labels_test_normalized = model.predict(features_test_normalized)
     labels_test = normalizer_labels.inverse_transform(labels_test_normalized)
@@ -73,7 +73,9 @@ def do_the_thing():
     curves_test = [tbdcv.Curve(knots_tests[i], labels_test[i], k) for i in range(len(features_test))]
     xycoords_crvtest = [crv.xycoordinates() for crv in curves_test]
     styles = ['l' for _ in curves_test]
-    tbapl.plot(xycoords_crvtest, styles=styles, labels=['{:.1f}'.format(features_test[i][0]) for i in range(len(features_test))])
+    #tbapl.plot(xycoords_crvtest, styles=styles, labels=['{:.1f}'.format(features_test[i][0]) for i in range(len(features_test))])
+    tbapl.plot(xycoords_crvtest, styles=styles, labels=['t0', 't1'], hide_labels=True,
+      ylabel='production', xlabel='time', save_as='img/curve_prediction.png')
 
 
 

@@ -7,7 +7,9 @@ plt.style.use('ggplot')
 STYLEFALLBACK = {'linestyle': 'solid', 'linewidth': 2, 'alpha': 0.7}
 TOMPLSTYLE = {'p': {'marker': 'x', 'linestyle': 'None'}, 'l': STYLEFALLBACK,
   'ls': {'linestyle': 'dashed', 'linewidth': 2, 'alpha': 0.7},
-  'lstage': {'linestyle': 'solid', 'linewidth': 2, 'alpha': 0.3, 'color': 'blue'},
+  'lgold': {'linestyle': 'solid', 'linewidth': 2, 'alpha': 1.0, 'color': '#eead45'},
+  'lblack': {'linestyle': 'solid', 'linewidth': 2, 'alpha': 1.0, 'color': 'k'},
+  'lstage': {'linestyle': 'dashed', 'linewidth': 2, 'alpha': 0.3, 'color': 'blue'},
   'iy': {'marker': '>', 'linestyle': 'None', 'color': 'k', 'markerfacecolor': 'None'},
   'ix': {'marker': '^', 'linestyle': 'None', 'color': 'k', 'markerfacecolor': 'None'}}
 
@@ -37,7 +39,7 @@ def render(ax, xyarraytuplesiterable, styles=[], labels=[], lim=((None, None), (
 
 def plot(xyarraytuplesiterable, styles=[], labels=[], show=True, lim=((None, None), (None, None)), 
          save_as='', secxyarraytuplesiterable=[], seclabels=[], secstyles=[], hide_labels=False,
-         xlabel='', ylabel='', secylabel=''):
+         xlabel='', ylabel='', secylabel='', secylim=(None, None)):
     fig = plt.figure() 
     ax = fig.add_subplot(111)
     handelsleg, labelsleg = [], []
@@ -56,7 +58,7 @@ def plot(xyarraytuplesiterable, styles=[], labels=[], show=True, lim=((None, Non
 
     if secxyarraytuplesiterable:
         axsec = ax.twinx()
-        hret, lret = render(axsec, secxyarraytuplesiterable, secstyles, seclabels)
+        hret, lret = render(axsec, secxyarraytuplesiterable, secstyles, seclabels, lim=((None, None), secylim))
         handelsleg += hret
         labelsleg += lret
         # aligning ticks
