@@ -26,13 +26,15 @@ def do_the_thing():
     fname_normalizer = tbarc.rcparams['shale.lstm.sequence.win.grad.fnamenorm'][:-3] + '_' + name_dataset + '.h5'
     num_timesteps = 2
     num_units = 3
-    num_epochs = 250
+    num_epochs = 25
     offset_forecast = num_timesteps
+
     if 1:
-        model, normalizer = tbamd.lstmseqwingrad(y, stage, num_epochs, num_timesteps, 
+        model, normalizer = tbamd.lstmseqwingrad(y, x, stage, num_epochs, num_timesteps, 
           num_units, offset_forecast)
         tbamd.save(model, fname_model)
         pickle.dump(normalizer, open(fname_normalizer, 'wb'))
+        sys.exit()
     else:
         model = tbamd.load(fname_model)
         normalizer = pickle.load(open(fname_normalizer, 'rb'))

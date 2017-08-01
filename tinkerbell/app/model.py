@@ -136,6 +136,7 @@ def lstm(feature_matrix, target_matrix, batch_size, num_epochs, num_neurons):
 
 
 NormalizerSeq = coll.namedtuple("NormalizerSeq", "time stage production")
+NormalizerGrad = coll.namedtuple("NormalizerGrad", "targets features")
 
 
 @makes_deep_copy
@@ -306,3 +307,62 @@ def predictseqwin(y_init, stage, normalizer, model, offset_forecast):
         yhat += [production_predicted[-offset_forecast, 0]] # always next value
     return np.array(yhat)
     
+
+@makes_deep_copy
+def lstmseqwingrad(production, time, stage, num_epochs=1000, num_timesteps=3, num_units=3,
+  offset_forecast=1):
+    log.info('LSTM gradient sequence model with window.')
+    RNN_t = kel.LSTM
+    #RNN_t = kel.SimpleRNN
+    num_features = 2 # dp_dt and stage delta
+    num_targets = 1
+
+    dp_dt = np.diff(production) / np.diff(time)
+    stage_delta = np.diff(stage)
+
+    num_time = len(dp_dt)
+    assert num_time == len(stage_delta)
+
+    num_sequences = num_time - num_timesteps - offset_forecast
+
+    sys.exit()
+    
+    normalizer_features = skprep.MinMaxScaler(feature_range=(-1, 1))
+    normalizer_targets = skprep.MinMaxScaler(feature_range=(0, 1))
+
+    stage_normalized = normalizer_stage.fit_transform(stage.reshape(-1, 1))
+    production_normalized = normalizer_production.fit_transform(production.reshape(-1, 1))
+    
+    X = np.zeros((num_sequences, num_timesteps, num_features))
+    y = np.zeros((num_sequences, num_timesteps, num_targets))
+
+    for isequence in range(num_sequences):
+        for itimestep in range(num_timesteps):
+            ifeature = 0
+            X[isequence, itimestep, ifeature] = production_normalized[isequence+itimestep, 0]
+            ifeature = 1
+            X[isequence, itimestep, ifeature] = stage_normalized[isequence+itimestep+offset_forecast, 0]
+            itarget = 0
+            y[isequence, itimestep, itarget] = production_normalized[isequence+itimestep+offset_forecast, 0]
+        log.info('<sequence', isequence)            
+        log.info(X[isequence])
+        log.info(y[isequence])
+        log.info('sequence', isequence, '>')
+    
+    # expected input data shape: (batch_size, timesteps, data_dim) 
+    batch_size = 1
+    model = kem.Sequential()
+    model.add(RNN_t(num_units, batch_input_shape=(batch_size, num_timesteps, num_features), 
+      return_sequences=True, stateful=True))
+    #model.add(kel.Dropout(0.2))
+    model.add(kel.TimeDistributed(kel.Dense(1)))
+    model.compile(loss='mean_squared_error', optimizer='adam')
+
+    reset_state = kec.LambdaCallback(on_epoch_end=lambda *_ : model.reset_states())
+    
+    model.summary()
+    model.fit(X, y, epochs=num_epochs, batch_size=batch_size, shuffle=False,
+      callbacks=[reset_state])
+    
+    return model, NormalizerSeq(None, normalizer_stage, normalizer_production)
+
