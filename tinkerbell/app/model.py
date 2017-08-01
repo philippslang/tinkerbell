@@ -139,7 +139,7 @@ def lstm(feature_matrix, target_matrix, batch_size, num_epochs, num_neurons):
 
 
 NormalizerSeq = coll.namedtuple("NormalizerSeq", "time stage production")
-NormalizerGrad = coll.namedtuple("NormalizerGrad", "targets features")
+NormalizerGrad = coll.namedtuple("NormalizerGrad", "dp_dt_src dp_dt_trg stage_delta")
 
 
 @makes_deep_copy
@@ -328,15 +328,15 @@ def lstmseqwingrad(production, time, stage, num_epochs=1000, num_timesteps=3, nu
     num_time = len(dp_dt)
     assert num_time == len(stage_delta)
 
+    normalizer_stage_delta = skprep.MinMaxScaler(feature_range=(-1, 1))
+    normalizer_dp_dt_src = skprep.MinMaxScaler(feature_range=(-1, 1))
+    normalizer_dp_dt_trg = skprep.MinMaxScaler(feature_range=(0, 1))
+
+    stage_delta_normalized = normalizer_stage_delta.fit_transform(stage_delta.reshape(-1, 1))
+    dp_dt_src_normalized = normalizer_dp_dt_src.fit_transform(dp_dt.reshape(-1, 1))    
+    dp_dt_trg_normalized = normalizer_dp_dt_trg.fit_transform(dp_dt.reshape(-1, 1))    
+
     num_sequences = num_time - num_timesteps - offset_forecast
-
-    sys.exit()
-    
-    normalizer_features = skprep.MinMaxScaler(feature_range=(-1, 1))
-    normalizer_targets = skprep.MinMaxScaler(feature_range=(0, 1))
-
-    stage_normalized = normalizer_stage.fit_transform(stage.reshape(-1, 1))
-    production_normalized = normalizer_production.fit_transform(production.reshape(-1, 1))
     
     X = np.zeros((num_sequences, num_timesteps, num_features))
     y = np.zeros((num_sequences, num_timesteps, num_targets))
@@ -344,15 +344,11 @@ def lstmseqwingrad(production, time, stage, num_epochs=1000, num_timesteps=3, nu
     for isequence in range(num_sequences):
         for itimestep in range(num_timesteps):
             ifeature = 0
-            X[isequence, itimestep, ifeature] = production_normalized[isequence+itimestep, 0]
+            X[isequence, itimestep, ifeature] = dp_dt_src_normalized[isequence+itimestep, 0]
             ifeature = 1
-            X[isequence, itimestep, ifeature] = stage_normalized[isequence+itimestep+offset_forecast, 0]
+            X[isequence, itimestep, ifeature] = stage_delta_normalized[isequence+itimestep+offset_forecast, 0]
             itarget = 0
-            y[isequence, itimestep, itarget] = production_normalized[isequence+itimestep+offset_forecast, 0]
-        log.info('<sequence', isequence)            
-        log.info(X[isequence])
-        log.info(y[isequence])
-        log.info('sequence', isequence, '>')
+            y[isequence, itimestep, itarget] = dp_dt_trg_normalized[isequence+itimestep+offset_forecast, 0]
     
     # expected input data shape: (batch_size, timesteps, data_dim) 
     batch_size = 1
@@ -369,5 +365,23 @@ def lstmseqwingrad(production, time, stage, num_epochs=1000, num_timesteps=3, nu
     model.fit(X, y, epochs=num_epochs, batch_size=batch_size, shuffle=False,
       callbacks=[reset_state])
     
-    return model, NormalizerSeq(None, normalizer_stage, normalizer_production)
+    return model, NormalizerGrad(normalizer_dp_dt_src, normalizer_dp_dt_trg, normalizer_stage_delta)
 
+
+def predictseqwingrad(y_init, time, stage, normalizer, model, offset_forecast):
+    model.reset_states()
+    yhat = list(y_init)
+    num_timesteps = len(y_init) - 1
+    num_time = len(time) - num_timesteps - offset_forecast
+    X = np.zeros((1, num_timesteps, num_features))
+    for itime in range(len(y_init), num_time):
+        stage_window = np.array(stage[itime-num_timesteps:itime+1])
+        production_window = np.array(yhat[itime-num_timesteps:itime])
+        stage_window_normalized = normalizer.stage.transform(stage_window.reshape(-1, 1))
+        production_window_normalized = normalizer.production.transform(production_window.reshape(-1, 1))
+        X[0, :, 0] = production_window_normalized[:,0]
+        X[0, :, 1] = stage_window_normalized[:,0]
+        y = model.predict(X, batch_size=1)
+        production_predicted = normalizer.production.inverse_transform(y[0])
+        yhat += [production_predicted[-offset_forecast, 0]] # always next value
+    return np.array(yhat)

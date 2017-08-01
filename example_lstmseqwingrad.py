@@ -26,7 +26,7 @@ def do_the_thing():
     fname_normalizer = tbarc.rcparams['shale.lstm.sequence.win.grad.fnamenorm'][:-3] + '_' + name_dataset + '.h5'
     num_timesteps = 2
     num_units = 3
-    num_epochs = 25
+    num_epochs = 100
     offset_forecast = num_timesteps
 
     if 1:
@@ -39,10 +39,10 @@ def do_the_thing():
         model = tbamd.load(fname_model)
         normalizer = pickle.load(open(fname_normalizer, 'rb'))
 
-    if 0:
-        ypred = tbamd.predictseqwin(y[:num_timesteps], stage, normalizer, model, offset_forecast)
+    if 1:
+        ypred = tbamd.predictseqwingrad(y[:num_timesteps+1], x, stage, normalizer, model, offset_forecast)
         xpred = x[:len(ypred)]
-        tbapl.plot([(x, y), (xpred, ypred)], styles=['p', 'l'], labels=['ytrain', 'yhat'])
+        #tbapl.plot([(x, y), (xpred, ypred)], styles=['p', 'l'], labels=['ytrain', 'yhat'])
 
 
 if __name__ == '__main__':
