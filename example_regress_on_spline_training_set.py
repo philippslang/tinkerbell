@@ -73,9 +73,15 @@ def do_the_thing():
     curves_test = [tbdcv.Curve(knots_tests[i], labels_test[i], k) for i in range(len(features_test))]
     xycoords_crvtest = [crv.xycoordinates() for crv in curves_test]
     styles = ['l' for _ in curves_test]
+    xstage = np.linspace(0., xmax, 75)
+    stage1 = np.zeros_like(xstage)
+    stage2 = np.zeros_like(xstage)
+    stage1[xstage >= features_test[0]] = 1.0
+    stage2[xstage >= features_test[1]] = 1.0
     #tbapl.plot(xycoords_crvtest, styles=styles, labels=['{:.1f}'.format(features_test[i][0]) for i in range(len(features_test))])
-    tbapl.plot(xycoords_crvtest, styles=styles, labels=['t0', 't1'], hide_labels=True,
-      ylabel='production', xlabel='time', save_as='img/curve_prediction.png')
+    tbapl.plot(xycoords_crvtest, styles=styles, labels=['prediction 0', 'prediction 1'], hide_labels=True,
+      ylabel='production', xlabel='time', save_as='img/curve_prediction.png', secxyarraytuplesiterable=[(xstage, stage1), (xstage, stage2)], 
+      seclabels=['planned stage 0', 'planned stage 1'], secstyles=['lstage', 'lstage'], secylim=(None, 3), secylabel='stage')
 
 
 

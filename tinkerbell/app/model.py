@@ -110,7 +110,10 @@ class ProgressBar:
         bar = self.fill * num_filled + '-' * (self.length - num_filled)
         loss = 0.0
         if history:
-            loss = history.history['loss'][-1]
+            try:
+                loss = history.history['loss'][-1]
+            except:
+                loss = history.history['loss']
         print('\rTraining |%s| %s%% complete, loss = %f.' % (bar, fraction, loss), end='\r')
 
 
@@ -250,7 +253,7 @@ def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3, num_units=3,
     log.info(num_timesteps)
     
     normalizer_stage = skprep.MinMaxScaler(feature_range=(-1, 1))
-    normalizer_production = skprep.MinMaxScaler(feature_range=(-1, 1))
+    normalizer_production = skprep.MinMaxScaler(feature_range=(0, 1))
 
     stage_normalized = normalizer_stage.fit_transform(stage.reshape(-1, 1))
     production_normalized = normalizer_production.fit_transform(production.reshape(-1, 1))
@@ -276,8 +279,9 @@ def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3, num_units=3,
     model = kem.Sequential()
     model.add(RNN_t(num_units, batch_input_shape=(batch_size, num_timesteps, num_features), 
       return_sequences=True, stateful=True))
-    #model.add(kel.Dropout(0.2))
-    model.add(kel.TimeDistributed(kel.Dense(1)))
+    #model.add(RNN_t(1, return_sequences=True, stateful=True))
+    #model.add(kel.Dropout(0.33))
+    model.add(kel.TimeDistributed(kel.Dense(1, activation='linear')))
     model.compile(loss='mean_squared_error', optimizer='adam')
 
     reset_state = kec.LambdaCallback(on_epoch_end=lambda *_ : model.reset_states())
@@ -290,6 +294,7 @@ def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3, num_units=3,
 
 
 def predictseqwin(y_init, stage, normalizer, model, offset_forecast):
+    model.reset_states()
     yhat = list(y_init)
     num_timesteps = len(y_init)
     num_y = len(stage)

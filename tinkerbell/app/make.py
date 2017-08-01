@@ -26,6 +26,7 @@ def points_exponential_discontinuous_declinelinear_noisy(yi, d, xmax, xdisc, y_j
     try:
         ixdisc = ixdisc[0][0]       
         xdata_disc = np.linspace(xmin, xmax-xdisc, len(ydata_noise[ixdisc:]))
+        #ydata = exponential_decline(ydata_noise[ixdisc] + (yi/y_jumpfactor) * np.random.normal(noise_mean, noise*3), d, xdata_disc)
         ydata = exponential_decline(ydata_noise[ixdisc] + (yi/y_jumpfactor) * np.random.normal(noise_mean, noise*3), d, xdata_disc)
         ydata = ydata * np.random.normal(noise_mean, noise*2, ydata.shape)
         ydata_noise[ixdisc:] = ydata[:]
