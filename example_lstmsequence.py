@@ -1,5 +1,5 @@
 """
-Multilayer perceptron regression model
+Whole sequence lstm trained on multiple sequences, incl NA val
 """
 
 import tinkerbell.app.plot as tbapl
@@ -13,52 +13,56 @@ import numpy as np
 import sklearn.preprocessing as preproc
 import pickle, sys, collections
 
-from keras.models import Sequential, load_model
-from keras.layers import Dense
+import keras.models as kem
+import keras.layers as kel
 import keras.callbacks as kec
 
-FNAME_MODEL = 'data_demo/model_mplgradseq.h5'
-FNAME_FNORM = 'data_demo/fnorm_mplgradseq'
-FNAME_TNORM = 'data_demo/tnorm_mplgradseq'
+FNAME_MODEL = 'data_demo/model_lstmsequence.h5'
+FNAME_FNORM = 'data_demo/fnorm_lstmsequence'
+FNAME_TNORM = 'data_demo/tnorm_lstmsequence'
 XDISC_MIN = 20.0
 XDISC_MAX = 40.0
-XMAX = 70
+XMAX = 70.0
+NA = -XMAX
 NUM_PTS = 75
 D = 0.1
 
 def do_the_thing():
 
-    num_features = NUM_PTS
-    num_targets = NUM_PTS
+    num_features = 2
+    num_timesteps = NUM_PTS
+    num_targets = 1
 
-    def model_deep():
-        model = Sequential()
-        afct = 'sigmoid'
-        #afct = 'tanh'
-        #afct = 'softmax'
-        model.add(Dense(num_features, input_dim=num_features, activation=afct))
-        model.add(Dense(num_features, activation=afct))
-        model.add(Dense(num_targets, activation=afct))
+    def make_model():
+        model = kem.Sequential()
+        model.add(kel.LSTM(num_timesteps, input_shape=(num_timesteps, num_features), return_sequences=True))
+        model.add(kel.TimeDistributed(kel.Dense(1)))
         model.compile(loss='mse', optimizer='adam')
         return model
 
     num_xdisc = 5
-    num_realizations = 5
+    num_realizations_per_xdisc = 5
     xdiscspace = (XDISC_MIN, XDISC_MAX)
     y0_mean = tbarc.rcparams['shale.exp.y0_mean']
     d = D
     k = tbarc.rcparams['shale.exp.k']
     xmax = XMAX
 
-    num_sequences = num_realizations*num_xdisc
-    num_samples = num_sequences
-    features = np.zeros((num_samples, num_features))
-    targets = np.zeros((num_samples, num_targets))
+    # will be set for each generated sequence
+    x_sequence = np.empty((num_timesteps, num_features))
+    y_sequence = np.empty((num_timesteps, num_targets))
+
+    num_sequences = num_realizations_per_xdisc * num_xdisc    
+    num_samples = num_sequences * (num_timesteps - 1) # for each training sequence we 
+    # provide it from first datapoint only to the next to last one
+    
+    x = np.full((num_samples, *x_sequence.shape), NA)
+    y = np.full((num_samples, *y_sequence.shape), NA)
 
     np.random.seed(42)
     isample = 0
     for xdisc in np.linspace(*xdiscspace, num_xdisc):
-        for irealization in range(num_realizations):
+        for irealization in range(num_realizations_per_xdisc):
             y0 = y0_mean
             pts, ixdisc = tbamk.points_exponential_discontinuous_declinelinear_noisy(y0, d, xmax, xdisc, 
               num=NUM_PTS)
@@ -68,8 +72,8 @@ def do_the_thing():
             #stage_delta_full = np.zeros((NUM_PTS,))
             #stage_delta_full[1:] = stage_delta[:]
             time, production = tbdpt.point_coordinates(pts)
-            features[isample,:] = stage[:]
-            targets[isample,:] = production[:]
+            x_sequence[:, 1] = stage[:]
+            x_sequence[:, 0] = production[:]
             isample += 1
 
     print(features.shape, targets.shape)  
