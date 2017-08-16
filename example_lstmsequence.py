@@ -23,7 +23,6 @@ FNAME_TNORM = 'data_demo/tnorm_lstmsequence'
 XDISC_MIN = 20.0
 XDISC_MAX = 40.0
 XMAX = 70.0
-NA = -XMAX
 NUM_PTS = 75
 D = 0.1
 
@@ -32,104 +31,108 @@ def do_the_thing():
     num_features = 2
     num_timesteps = NUM_PTS
     num_targets = 1
+    num_units = 4
 
     def make_model():
         model = kem.Sequential()
         model.add(kel.LSTM(num_timesteps, input_shape=(num_timesteps, num_features), return_sequences=True))
-        model.add(kel.TimeDistributed(kel.Dense(1)))
+        model.add(kel.TimeDistributed(kel.Dense(num_targets)))
         model.compile(loss='mse', optimizer='adam')
         return model
 
-    num_xdisc = 5
-    num_realizations_per_xdisc = 5
+    num_xdisc = 3
+    num_realizations_per_xdisc = 3
     xdiscspace = (XDISC_MIN, XDISC_MAX)
     y0_mean = tbarc.rcparams['shale.exp.y0_mean']
     d = D
     k = tbarc.rcparams['shale.exp.k']
     xmax = XMAX
+    NA = -xmax
 
-    # will be set for each generated sequence
-    x_sequence = np.empty((num_timesteps, num_features))
-    y_sequence = np.empty((num_timesteps, num_targets))
+    num_production_profiles = num_realizations_per_xdisc * num_xdisc    
+    # for each training sequence we provide it from first datapoint only to the next to last one
+    num_sequences = num_production_profiles * (num_timesteps - 1) 
 
-    num_sequences = num_realizations_per_xdisc * num_xdisc    
-    num_samples = num_sequences * (num_timesteps - 1) # for each training sequence we 
-    # provide it from first datapoint only to the next to last one
     
-    x = np.full((num_samples, *x_sequence.shape), NA)
-    y = np.full((num_samples, *y_sequence.shape), NA)
+
+    ifeature_production = 0
+    ifeature_stage = 1
+    itarget_production = 0
+
+    
+    normalizer_production = preproc.MinMaxScaler(feature_range=(0, 1), copy=False)
+    range_production = np.array([[xmax], [NA]])
+    normalizer_production.fit_transform(range_production)
+    normalizer_stage = preproc.MinMaxScaler(feature_range=(0, 1), copy=False) 
+    range_stage = [[1.0], [0.0]]
+    normalizer_stage.fit(range_stage)
+
+    NA_norm = range_production.min()
+
+    x = np.full((num_sequences, num_timesteps, num_features), NA_norm)
+    y = np.full((num_sequences, num_timesteps, num_targets), NA_norm)
 
     np.random.seed(42)
     isample = 0
+    production = np.empty((num_timesteps, 1))
+    stage = np.empty_like(production)
     for xdisc in np.linspace(*xdiscspace, num_xdisc):
-        for irealization in range(num_realizations_per_xdisc):
+        for _ in range(num_realizations_per_xdisc):
             y0 = y0_mean
             pts, ixdisc = tbamk.points_exponential_discontinuous_declinelinear_noisy(y0, d, xmax, xdisc, 
               num=NUM_PTS)
-            stage = np.zeros((NUM_PTS,))
-            stage[ixdisc:] = 1.0
-            #stage_delta = np.diff(stage)
-            #stage_delta_full = np.zeros((NUM_PTS,))
-            #stage_delta_full[1:] = stage_delta[:]
-            time, production = tbdpt.point_coordinates(pts)
-            x_sequence[:, 1] = stage[:]
-            x_sequence[:, 0] = production[:]
-            isample += 1
+            _, q = tbdpt.point_coordinates(pts)  
+            production[:, 0] = q[:]
+            stage[:ixdisc, 0] = 0.0
+            stage[ixdisc:, 0] = 1.0
+            normalizer_production.transform(production)
+            normalizer_stage.transform(stage)
+            for num_sample_points in range(1, num_timesteps):
+                x[isample, :, ifeature_stage] = stage[:, 0]
+                x[isample, :num_sample_points, ifeature_production] = production[:num_sample_points, 0]
+                y[isample, :, itarget_production] = production[:, 0]
+                isample += 1
 
-    print(features.shape, targets.shape)  
+    if 0:
+        model = make_model()
 
-    if 1:
-        normalizer_features = preproc.MinMaxScaler() 
-        features_normalized = normalizer_features.fit_transform(features)
-        pickle.dump(normalizer_features, open(FNAME_FNORM, "wb"))
-
-        normalizer_targets = preproc.MinMaxScaler() 
-        targets_normalized = normalizer_targets.fit_transform(targets)
-        pickle.dump(normalizer_targets, open(FNAME_TNORM, "wb"))
-
-        model = model_deep()
-
-        num_epochs = 200
-
-        History = collections.namedtuple("History", "history")
-        
-        with tbamd.ProgressBar(num_epochs) as progress_bar:
-            progress_bar.iepoch = 0
-
-            def advance_progress_bar(logs):
-                history = History(logs)                
-                progress_bar.update(progress_bar.iepoch, history)
-                progress_bar.iepoch += 1
-            
-            after_epoch = kec.LambdaCallback(on_epoch_end=lambda batch, logs : advance_progress_bar(logs))
-
-            model.fit(features_normalized, targets_normalized, epochs=num_epochs, batch_size=2,
-              callbacks=[after_epoch], verbose=0)
+        # whole multiple of batch_size should be 
+        model.fit(x, y, epochs=3, batch_size=2)
 
         model.save(FNAME_MODEL)
     else:
-        model = load_model(FNAME_MODEL)
-        normalizer_features = pickle.load(open(FNAME_FNORM, "rb"))
-        normalizer_targets = pickle.load(open(FNAME_TNORM, "rb"))
+        model = kem.load_model(FNAME_MODEL)
 
-    #sys.exit()
 
-    xdisc, att = np.mean(xdiscspace), '0'
-    xdisc, att = np.max(xdiscspace)*1.2, '1'
+    xdisc = xdiscspace[0] + np.diff(xdiscspace)[0] * 0.25
     pts, ixdisc = tbamk.points_exponential_discontinuous_declinelinear_noisy(y0, d, xmax, xdisc, 
       num=NUM_PTS)
     time, production = tbdpt.point_coordinates(pts)
+    production_copy = np.copy(production)
+    num_production_history = 40
+    production[num_production_history:] = NA
     stage = np.zeros_like(time)
-    print(time[ixdisc])
-    stage[ixdisc:] = 1
-    stagers = stage.reshape((1,-1))
-    stagers = normalizer_features.transform(stagers)
-    production_hat = model.predict(stagers)
-    production_hat = normalizer_targets.inverse_transform(production_hat)
-    production_hat = production_hat[0]
+    stage[ixdisc:] = 1.0
+    
+    stage = stage.reshape((-1, 1))
+    normalizer_stage.transform(stage)
+    production = production.reshape((-1, 1))
+    normalizer_production.transform(production)
+    x = np.empty((1, num_timesteps, num_features))
+    x[0, :, ifeature_production] = production[:, 0]
+    x[0, :, ifeature_stage] = stage[:, 0]
+    y_hat = model.predict(x) 
+    normalizer_production.inverse_transform(y_hat[0])
+    tbapl.plot([(time, y_hat[0, :, 0]), (time[:num_production_history], production_copy[:num_production_history])], 
+      ['l', 'p'])
+    sys.exit()
+
+
     tbapl.plot([(time, production_hat), (time, production)], ['l', 'p'], 
       hide_labels=True, ylabel='production', xlabel='time', labels=['prediction', 'reference'],
       save_as='img/mlpseq'+att+'0.png', secylabel='stage')
+
+    sys.exit()
     tbapl.plot([(time, production_hat), ], ['l'], 
       hide_labels=True, ylabel='production', xlabel='time', labels=['prediction'],
       save_as='img/mlpseq'+att+'1.png', secxyarraytuplesiterable=[(time, stage)], seclabels=['planned stage'],
