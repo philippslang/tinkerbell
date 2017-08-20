@@ -44,8 +44,8 @@ def do_the_thing():
         model.compile(loss='mse', optimizer='adam')
         return model
 
-    num_xdisc = 1
-    num_realizations_per_xdisc = 1
+    num_xdisc = 4
+    num_realizations_per_xdisc = 8
     xdiscspace = (XDISC_MIN, XDISC_MAX)
     y0_mean = tbarc.rcparams['shale.exp.y0_mean']
     d = D
@@ -95,10 +95,11 @@ def do_the_thing():
                 y[isample, :, itarget_production] = production[1:, 0]
                 isample += 1
 
-    print(x)
-    print(y)
-    l()
-    
+    if 0:
+        print(x)
+        print(y)
+        l()
+
     if 1:
         model = make_model()
 
@@ -114,24 +115,21 @@ def do_the_thing():
     pts, ixdisc = tbamk.points_exponential_discontinuous_declinelinear_noisy(y0, d, xmax, xdisc, 
       num=NUM_PTS)
     time, production = tbdpt.point_coordinates(pts)
-    production_copy = np.copy(production)
-    num_production_history = 5
-    production[num_production_history:] = NA
-    stage = np.zeros_like(time)
-    stage[ixdisc:] = 1.0
+    num_production_history = 6
+    production_in = np.full((num_timesteps, 1), NA)
+    production_in[:num_production_history, 0] = production[:num_production_history]
+    stage_in= np.zeros_like(production_in)
+    stage_in[ixdisc:, 0] = 1.0
     
-    stage = stage.reshape((-1, 1))
-    normalizer_stage.transform(stage)
-    production = production.reshape((-1, 1))
-    normalizer_production.transform(production)
+    normalizer_stage.transform(stage_in)
+    normalizer_production.transform(production_in)
     xin = np.empty((1, num_timesteps, num_features))
-    #xin[0, :, :] = x[5, :, :]
-    xin[0, :, ifeature_production] = production[:, 0]
-    xin[0, :, ifeature_stage] = stage[:, 0]
+    xin[0, :, ifeature_production] = production_in[:, 0]
+    xin[0, :, ifeature_stage] = stage_in[:, 0]
     y_hat = model.predict(xin) 
     normalizer_production.inverse_transform(y_hat[0])
-    tbapl.plot([(time[1:], y_hat[0, 1:, 0]), (time[:num_production_history], production_copy[:num_production_history])], ['l', 'p'])
-    tbapl.plot([(time[1:], y_hat[0, 1:, 0]), (time, production_copy)], ['l', 'p'])
+    tbapl.plot([(time[1:-1], y_hat[0, 1:, 0]), (time[:num_production_history], production[:num_production_history])], ['l', 'p'])
+    tbapl.plot([(time[1:-1], y_hat[0, 1:, 0]), (time, production)], ['l', 'p'])
     sys.exit()
 
 
