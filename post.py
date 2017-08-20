@@ -32,6 +32,9 @@ D = 0.1
 
 def do_the_thing():
 
+    num_units, RNN = 25, kel.LSTM
+    #num_units, RNN = 75, kel.SimpleRNN
+
     num_features = 2
     num_timesteps = NUM_PTS
     num_targets = 1
@@ -39,7 +42,7 @@ def do_the_thing():
 
     def make_model():
         model = kem.Sequential()
-        model.add(kel.LSTM(num_units, input_shape=(num_timesteps, num_features), return_sequences=True))
+        model.add(RNN(num_units, input_shape=(num_timesteps, num_features), return_sequences=True))
         model.add(kel.TimeDistributed(kel.Dense(num_targets)))
         model.compile(loss='mse', optimizer='adam')
         return model
@@ -56,7 +59,6 @@ def do_the_thing():
     # for each training sequence we provide it from first datapoint only to the next to last one
     num_sequences_per_profile = num_timesteps - 1
     num_sequences = num_production_profiles * num_sequences_per_profile
-    print(num_sequences_per_profile)
 
     ifeature_production = 0
     ifeature_stage = 1
