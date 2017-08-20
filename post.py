@@ -22,13 +22,12 @@ def l():
     sys.exit()
 
 
-FNAME_MODEL = 'data_demo/model_lstmsequence.h5'
-FNAME_FNORM = 'data_demo/fnorm_lstmsequence'
-FNAME_TNORM = 'data_demo/tnorm_lstmsequence'
+FNAME_MODEL = 'data_demo/model_post.h5'
+FNAME_NORM = 'data_demo/norm_post'
 XDISC_MIN = 20.0
 XDISC_MAX = 40.0
 XMAX = 70.0
-NUM_PTS = 75
+NUM_PTS = 50
 D = 0.1
 
 def do_the_thing():
@@ -36,11 +35,11 @@ def do_the_thing():
     num_features = 2
     num_timesteps = NUM_PTS
     num_targets = 1
-    num_units = 1
+    num_units = 25
 
     def make_model():
         model = kem.Sequential()
-        model.add(kel.LSTM(num_timesteps, input_shape=(num_timesteps, num_features), return_sequences=True))
+        model.add(kel.LSTM(num_units, input_shape=(num_timesteps, num_features), return_sequences=True))
         model.add(kel.TimeDistributed(kel.Dense(num_targets)))
         model.compile(loss='mse', optimizer='adam')
         return model
@@ -128,6 +127,7 @@ def do_the_thing():
     y_hat = model.predict(xin) 
     normalizer_production.inverse_transform(y_hat[0])
     tbapl.plot([(time[1:], y_hat[0, 1:, 0]), (time[:num_production_history], production_copy[:num_production_history])], ['l', 'p'])
+    tbapl.plot([(time[1:], y_hat[0, 1:, 0]), (time, production_copy)], ['l', 'p'])
     sys.exit()
 
 
