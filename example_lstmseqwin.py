@@ -37,11 +37,12 @@ def do_the_thing():
     num_units = 3
     num_epochs = 100
     offset_forecast = 1#num_timesteps
-    if 0:
+    if 1:
         model, normalizer = tbamd.lstmseqwin(y, stage, num_epochs, num_timesteps, 
           num_units, offset_forecast)
         tbamd.save(model, fname_model)
         pickle.dump(normalizer, open(fname_normalizer, 'wb'))
+        sys.exit()
     else:
         model = tbamd.load(fname_model)
         normalizer = pickle.load(open(fname_normalizer, 'rb'))

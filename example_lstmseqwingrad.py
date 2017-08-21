@@ -13,7 +13,7 @@ import tinkerbell.app.rcparams as tbarc
 
 def do_the_thing():
     fname_csv = tbarc.rcparams['shale.lstm.fnamecsv']
-    fname_csv = tbarc.rcparams['shale.lstm_stage.fnamecsv']
+    #fname_csv = tbarc.rcparams['shale.lstm_stage.fnamecsv']
     name_dataset = fname_csv[10:-4]
     log.info(name_dataset)
     series = pd.read_csv(fname_csv)
@@ -24,17 +24,16 @@ def do_the_thing():
  
     fname_model =  tbarc.rcparams['shale.lstm.sequence.win.grad.fnamemodel'][:-3] + '_' + name_dataset + '.h5'
     fname_normalizer = tbarc.rcparams['shale.lstm.sequence.win.grad.fnamenorm'][:-3] + '_' + name_dataset + '.h5'
-    num_timesteps = 2
-    num_units = 3
-    num_epochs = 100
-    offset_forecast = num_timesteps
+    num_timesteps = 3
+    num_units = 200
+    num_epochs = 2000
+    offset_forecast = 1#num_timesteps
 
     if 1:
         model, normalizer = tbamd.lstmseqwingrad(y, x, stage, num_epochs, num_timesteps, 
           num_units, offset_forecast)
         tbamd.save(model, fname_model)
         pickle.dump(normalizer, open(fname_normalizer, 'wb'))
-        sys.exit()
     else:
         model = tbamd.load(fname_model)
         normalizer = pickle.load(open(fname_normalizer, 'rb'))
@@ -42,9 +41,9 @@ def do_the_thing():
     if 1:
         ypred = tbamd.predictseqwingrad(y[:num_timesteps+1], x, stage, normalizer, model, offset_forecast)
         xpred = x[:len(ypred)]
-        #tbapl.plot([(x, y), (xpred, ypred)], styles=['p', 'l'], labels=['ytrain', 'yhat'])
+        tbapl.plot([(x, y), (xpred, ypred)], styles=['p', 'l'], labels=['ytrain', 'yhat'])
 
 
 if __name__ == '__main__':
-    log.basicConfig(filename='debug01.log', level=log.DEBUG, filemode='w')
+    #log.basicConfig(filename='debug01.log', level=log.DEBUG, filemode='w')
     do_the_thing()

@@ -281,7 +281,7 @@ def lstmseqwin(production, stage, num_epochs=1000, num_timesteps=3, num_units=3,
       return_sequences=True, stateful=True))
     #model.add(RNN_t(1, return_sequences=True, stateful=True))
     #model.add(kel.Dropout(0.33))
-    model.add(kel.TimeDistributed(kel.Dense(1, activation='linear')))
+    model.add(kel.TimeDistributed(kel.Dense(num_targets, activation='linear')))
     model.compile(loss='mean_squared_error', optimizer='adam')
 
     reset_state = kec.LambdaCallback(on_epoch_end=lambda *_ : model.reset_states())
@@ -330,33 +330,45 @@ def lstmseqwingrad(production, time, stage, num_epochs=1000, num_timesteps=3, nu
 
     normalizer_stage_delta = skprep.MinMaxScaler(feature_range=(-1, 1))
     normalizer_dp_dt_src = skprep.MinMaxScaler(feature_range=(-1, 1))
-    normalizer_dp_dt_trg = skprep.MinMaxScaler(feature_range=(0, 1))
+    normalizer_dp_dt_trg = skprep.MinMaxScaler(feature_range=(-1, 1))
 
     stage_delta_normalized = normalizer_stage_delta.fit_transform(stage_delta.reshape(-1, 1))
     dp_dt_src_normalized = normalizer_dp_dt_src.fit_transform(dp_dt.reshape(-1, 1))    
     dp_dt_trg_normalized = normalizer_dp_dt_trg.fit_transform(dp_dt.reshape(-1, 1))    
 
-    num_sequences = num_time - num_timesteps - offset_forecast
+    num_sequences = num_time - num_timesteps - offset_forecast + 1
     
     X = np.zeros((num_sequences, num_timesteps, num_features))
     y = np.zeros((num_sequences, num_timesteps, num_targets))
 
+    iflat = 0
     for isequence in range(num_sequences):
         for itimestep in range(num_timesteps):
             ifeature = 0
-            X[isequence, itimestep, ifeature] = dp_dt_src_normalized[isequence+itimestep, 0]
+            X[isequence, itimestep, ifeature] = dp_dt_src_normalized[iflat+itimestep, 0]
             ifeature = 1
-            X[isequence, itimestep, ifeature] = stage_delta_normalized[isequence+itimestep+offset_forecast, 0]
+            X[isequence, itimestep, ifeature] = stage_delta_normalized[iflat+itimestep+offset_forecast, 0]
             itarget = 0
-            y[isequence, itimestep, itarget] = dp_dt_trg_normalized[isequence+itimestep+offset_forecast, 0]
+            y[isequence, itimestep, itarget] = dp_dt_trg_normalized[iflat+itimestep+offset_forecast, 0]
+        iflat += 1
+    idxprint = 5
+    #print(dp_dt_src_normalized[:idxprint*2,0])
+    print(X[:idxprint,:,:])
+    #print(y[:idxprint,:,:])
+
+    #print(X)
+    #print(y)
     
+    #np.savetxt('y.txt', y)
+    #sys.exit()
     # expected input data shape: (batch_size, timesteps, data_dim) 
     batch_size = 1
     model = kem.Sequential()
     model.add(RNN_t(num_units, batch_input_shape=(batch_size, num_timesteps, num_features), 
-      return_sequences=True, stateful=True))
+      stateful=True, return_sequences=True))
     #model.add(kel.Dropout(0.2))
-    model.add(kel.TimeDistributed(kel.Dense(1)))
+    model.add(kel.TimeDistributed(kel.Dense(1, activation='tanh')))
+    #model.add(kel.Dense(num_timesteps))
     model.compile(loss='mean_squared_error', optimizer='adam')
 
     reset_state = kec.LambdaCallback(on_epoch_end=lambda *_ : model.reset_states())
@@ -371,17 +383,26 @@ def lstmseqwingrad(production, time, stage, num_epochs=1000, num_timesteps=3, nu
 def predictseqwingrad(y_init, time, stage, normalizer, model, offset_forecast):
     model.reset_states()
     yhat = list(y_init)
+    num_features = 2
     num_timesteps = len(y_init) - 1
     num_time = len(time) - num_timesteps - offset_forecast
     X = np.zeros((1, num_timesteps, num_features))
-    for itime in range(len(y_init), num_time):
-        stage_window = np.array(stage[itime-num_timesteps:itime+1])
-        production_window = np.array(yhat[itime-num_timesteps:itime])
-        stage_window_normalized = normalizer.stage.transform(stage_window.reshape(-1, 1))
-        production_window_normalized = normalizer.production.transform(production_window.reshape(-1, 1))
-        X[0, :, 0] = production_window_normalized[:,0]
-        X[0, :, 1] = stage_window_normalized[:,0]
-        y = model.predict(X, batch_size=1)
-        production_predicted = normalizer.production.inverse_transform(y[0])
-        yhat += [production_predicted[-offset_forecast, 0]] # always next value
+    for itime in range(num_timesteps + 1, num_time):
+        stage_window = np.array(stage[itime-num_timesteps:itime+1])        
+        production_window = np.array(yhat[itime-num_timesteps-1:itime])
+        time_window = np.array(time[itime-num_timesteps-1:itime])
+        dp_dt_src = np.diff(production_window) / np.diff(time_window)
+        stage_delta = np.diff(stage_window)        
+        stage_delta_normalized = normalizer.stage_delta.transform(stage_delta.reshape(-1, 1))
+        dp_dt_src_normalized = normalizer.dp_dt_src.transform(dp_dt_src.reshape(-1, 1))
+        X[0, :, 0] = dp_dt_src_normalized[:, 0]
+        X[0, :, 1] = stage_delta_normalized[:, 0]
+        #print(X)
+        #input('...')
+        y = model.predict(X)
+        dp_dt_predicted = normalizer.dp_dt_trg.inverse_transform(y[0])
+        dp_dt_predicted = dp_dt_predicted[-offset_forecast, 0]
+        time_delta = time[itime] - time[itime-1]
+        pprev = yhat[-1]
+        yhat += [pprev + time_delta*dp_dt_predicted] #  value at yhat[itime]
     return np.array(yhat)

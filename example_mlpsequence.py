@@ -16,6 +16,15 @@ import pickle, sys, collections
 from keras.models import Sequential, load_model
 from keras.layers import Dense
 import keras.callbacks as kec
+import keras.models as kem
+import keras.layers as kel
+
+model = kem.Sequential()
+model.add(kel.LSTM(2, input_shape=(1, 2)))
+#model.compile(loss='mean_squared_error', optimizer='adam')
+
+model.summary()
+sys.exit()
 
 FNAME_MODEL = 'data_demo/model_mplgradseq.h5'
 FNAME_FNORM = 'data_demo/fnorm_mplgradseq'
