@@ -83,7 +83,7 @@ def do_the_thing():
 
     print(features.shape, targets.shape)  
 
-    if 0:
+    if 1:
         normalizer_features = preproc.MinMaxScaler() 
         features_normalized = normalizer_features.fit_transform(features)
         pickle.dump(normalizer_features, open(FNAME_FNORM, "wb"))

@@ -25,7 +25,7 @@ def do_the_thing():
     fname_model =  tbarc.rcparams['shale.lstm.sequence.fnamemodel'][:-3] + '_' + name_dataset + '.h5'
     fname_normalizer = tbarc.rcparams['shale.lstm.sequence.fnamenorm'][:-3] + '_' + name_dataset + '.h5'
     num_gradients_window = 3
-    if 0:
+    if  1:
         model, normalizerseq = tbamd.lstmseq(x, y, stage, 1000)
         tbamd.save(model, fname_model)
         pickle.dump(normalizerseq, open(fname_normalizer, 'wb'))
@@ -37,7 +37,7 @@ def do_the_thing():
     log.info("Outputs: {}".format(model.output_shape))
 
     if 1:
-        #stage = np.zeros_like(x)
+        stage = np.zeros_like(x)
         xpred, ypred = tbamd.predictseq(x, stage, normalizerseq, model)
         tbapl.plot([(x, y), (xpred, ypred)], styles=['p', 'l'], labels=['ytrain', 'yhat'])
 
